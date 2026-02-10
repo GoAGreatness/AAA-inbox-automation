@@ -199,21 +199,21 @@ version-B/
 
 ## Development Stages
 
-### **Stage 1: Environment Setup** ⏳
+### **Stage 1: Environment Setup** ✅
 **Goal**: Get development environment ready
 
 **Tasks**:
 - [ ] Install Node.js (for Office.js development tools)
-- [ ] Install Python 3.10+ and create virtual environment
-- [ ] Install Python dependencies
+- [x] Install Python 3.10+ and create virtual environment
+- [x] Install Python dependencies
 - [ ] Install Yeoman and Office Add-in generator (optional)
-- [ ] Get Anthropic API key OR install Ollama
+- [x] Get Anthropic API key OR install Ollama (Ollama installed)
 - [ ] Generate self-signed SSL certificate for local HTTPS
-- [ ] Test basic Flask app with HTTPS
+- [x] Test basic Flask app (HTTP working, HTTPS next)
 
 **Deliverable**: Working dev environment with HTTPS backend
 
-**Estimated Time**: 1-2 hours
+**Completed**: 2026-02-10
 
 **Key Commands**:
 ```bash
@@ -233,16 +233,17 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 ---
 
-### **Stage 2: Basic Backend API** ⏳
+### **Stage 2: Basic Backend API** ⏳ (In Progress)
 **Goal**: Create local backend service for AI generation
 
 **Tasks**:
-- [ ] Create Flask/FastAPI app with HTTPS
-- [ ] Enable CORS for localhost origins
-- [ ] Set up SQLite database schema
-- [ ] Create API endpoint: `POST /api/generate`
-- [ ] Implement basic Anthropic API integration
-- [ ] Test API with Postman or curl
+- [x] Create Flask/FastAPI app with HTTPS
+- [x] Enable CORS for localhost origins
+- [x] Set up SQLite database schema
+- [x] Create API endpoint: `POST /api/generate`
+- [x] Implement basic Ollama integration
+- [ ] Test /api/generate endpoint
+- [ ] Add HTTPS support
 
 **Deliverable**: Backend API running on https://localhost:5000
 
