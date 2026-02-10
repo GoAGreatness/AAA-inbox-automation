@@ -108,21 +108,17 @@
 - **Testing**: Office Add-in Debugging tools
 
 ### AI Options
-1. **Anthropic API** (Claude - Recommended)
-   - Easier setup, no model installation
-   - Better quality responses
-   - Fast, cost-effective (Haiku ~$0.001/email)
-   - Requires API key
-
-2. **Ollama** (Local LLM Alternative)
+**SELECTED: Ollama (Local LLM)** ✅
    - Fully offline
-   - Free after setup
+   - Free (no API costs)
    - Supports Llama, Mistral, etc.
-   - Slower, requires more resources
+   - Complete data privacy
+   - Good enough for POC
 
-3. **Pattern-Based** (Fallback)
-   - Rule-based response generation
-   - If AI setup is challenging initially
+**Alternative: Anthropic API** (If quality needs improvement)
+   - Better responses
+   - Faster
+   - Requires API key + costs money
 
 ---
 
@@ -561,13 +557,9 @@ SSL_KEY_PATH=./backend/data/ssl/key.pem
 CORS_ORIGINS=https://localhost:3000,https://outlook.office365.com
 
 # AI Configuration
-AI_PROVIDER=anthropic  # Options: anthropic, ollama, pattern-based
-ANTHROPIC_API_KEY=your_api_key_here
-ANTHROPIC_MODEL=claude-3-5-haiku-20250116  # or claude-3-5-sonnet
-
-# Ollama (if using local)
+AI_PROVIDER=ollama  # Using local Ollama
 OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=mistral:7b
+OLLAMA_MODEL=llama3.2:3b  # or mistral:7b, llama2, etc.
 
 # Database
 DATABASE_PATH=./backend/data/database.db
@@ -685,9 +677,7 @@ flask-cors==4.0.0
 # uvicorn==0.27.0
 
 # AI/ML
-anthropic==0.18.1              # Anthropic API client
-# OR
-# ollama==0.1.6                # Ollama client (alternative)
+ollama==0.1.6                  # Ollama client for local LLM
 
 langchain==0.1.0               # Optional: LLM orchestration
 langchain-community==0.0.10    # Community integrations
@@ -950,9 +940,30 @@ certutil -addstore -user Root backend/data/ssl/cert.pem
 
 ---
 
-**Current Status**: Planning Complete ✅
+**Current Status**: Planning Complete ✅ | Starting Development
 **Next Stage**: Stage 1 - Environment Setup
-**Ready to Start**: Awaiting confirmation to proceed
+
+---
+
+## Confirmed Decisions (2026-02-10)
+
+### Environment
+- **Python**: 3.12.0 ✅
+- **Node.js**: Not installed yet (needed for add-in later)
+- **OS**: Windows (PowerShell)
+- **Outlook**: Desktop version with shared mailbox access ✅
+
+### Technical Stack
+- **AI Provider**: Ollama (local LLM) - no API costs ✅
+- **Email Access**: OAuth with delegated access (Option B from planning)
+  - Fallback: Manual email export for testing (Option C)
+- **Testing**: Mock emails/threads (no real email data initially) ✅
+- **Build Order**: Backend first, then add-in ✅
+
+### Testing Strategy
+- Use mock email data for development
+- Real Outlook testing later when add-in ready
+- Desktop Outlook only (web version not accessible without admin)
 
 ---
 
