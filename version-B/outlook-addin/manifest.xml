@@ -13,8 +13,8 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Email Response Generator"/>
   <Description DefaultValue="AI-powered email response assistant for shared inbox"/>
-  <IconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-128.png"/>
+  <IconUrl DefaultValue="https://localhost:3000/src/taskpane/taskpane.html"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost:3000/src/taskpane/taskpane.html"/>
   <SupportUrl DefaultValue="https://localhost:3000"/>
 
   <!-- Hosts (Outlook) -->
