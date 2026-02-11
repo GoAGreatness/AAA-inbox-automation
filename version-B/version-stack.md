@@ -233,7 +233,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 ---
 
-### **Stage 2: Basic Backend API** ⏳ (In Progress)
+### **Stage 2: Basic Backend API** ✅ (Complete)
 **Goal**: Create local backend service for AI generation
 
 **Tasks**:
@@ -242,12 +242,12 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 - [x] Set up SQLite database schema
 - [x] Create API endpoint: `POST /api/generate`
 - [x] Implement basic Ollama integration
-- [ ] Test /api/generate endpoint
-- [ ] Add HTTPS support
+- [x] Test /api/generate endpoint (Status 200, response received)
+- [x] Add HTTPS support (self-signed cert working)
 
-**Deliverable**: Backend API running on https://localhost:5000
+**Deliverable**: Backend API running on https://localhost:5000 ✅
 
-**Estimated Time**: 2-3 hours
+**Completed**: 2026-02-11
 
 **Database Schema (Initial)**:
 ```sql
@@ -282,7 +282,7 @@ CREATE TABLE templates (
 
 ---
 
-### **Stage 3: Simple Outlook Add-in Shell** ⏳
+### **Stage 3: Simple Outlook Add-in Shell** ⏳ (Next)
 **Goal**: Create basic add-in that can read email
 
 **Tasks**:

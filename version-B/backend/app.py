@@ -78,12 +78,16 @@ def get_stats():
 if __name__ == '__main__':
     port = int(os.getenv('FLASK_PORT', 5000))
 
-    # For now, run without HTTPS (we'll add SSL later)
-    print(f"Starting backend on http://localhost:{port}")
-    print("Note: Add-in will require HTTPS later")
+    # SSL certificate paths
+    ssl_cert = os.path.join('backend', 'data', 'ssl', 'cert.pem')
+    ssl_key = os.path.join('backend', 'data', 'ssl', 'key.pem')
+
+    print(f"Starting backend on https://localhost:{port}")
+    print("Using self-signed SSL certificate")
 
     app.run(
         host='localhost',
         port=port,
-        debug=app.config['DEBUG']
+        debug=app.config['DEBUG'],
+        ssl_context=(ssl_cert, ssl_key)
     )
