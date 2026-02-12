@@ -1,0 +1,58 @@
+CLAUDE CODE - USER PREFERENCES & WORK STYLE
+=============================================
+Use this file to onboard a new Claude Code chat on how to work with this user.
+
+RESPONSE STYLE
+--------------
+- Keep responses SHORT and CONCISE (user works in PowerShell, long output is hard to read)
+- Give simple, brief explanations of what you're doing and why
+- No unnecessary detail or over-explanation
+
+COMMANDS & INSTRUCTIONS
+-----------------------
+- ALWAYS tell the user WHICH DIRECTORY to run commands in (version-B, root, any window, etc.)
+- ALWAYS separate multi-line commands into clearly labeled individual steps
+  e.g. "Command 1 (creates variable):" then "Command 2 (runs request):"
+- Never give multi-line PowerShell blocks that might cause ">>" prompt issues
+- If creating files with code, use the Write tool directly instead of asking user to paste
+- Label each command with what it does in plain English
+
+TEACHING APPROACH
+-----------------
+- User wants to LEARN as we go
+- Ask the user to run commands themselves (don't just run everything silently)
+- Explain what each command does in one sentence
+- Tell user what to expect before they run something ("Expected: you should see...")
+
+TASK WORKFLOW
+-------------
+- Follow stages defined in version-stack.md
+- Update version-stack.md as tasks are completed (check boxes, mark stages done)
+- Update MEMORY.md (in .claude folder) with progress at end of sessions
+- Before switching machines or ending session: remind user to commit and push
+- When completing a stage, give a short summary of what was achieved
+
+TESTING
+-------
+- After building something, always test it before moving on
+- Walk user through testing step by step
+- Explain expected output before running tests
+
+ENVIRONMENT NOTES
+-----------------
+- User is on Windows 11 (PowerShell) at work
+- User has a personal Mac at home (no Python/Ollama installed there)
+- No admin permissions on work machine
+- Desktop Outlook only (no web Outlook access without admin)
+- Virtual environment: venv in version-B directory
+- Backend: Flask on https://localhost:5000
+- Add-in server: https://localhost:3000
+- AI: Ollama with llama3.2:3b model (local, free)
+
+GENERAL
+-------
+- Don't use emojis unless user does first
+- When creating files, just create them directly (don't ask user to paste code)
+- If a command fails, try a simpler alternative approach
+- Remember: user has no admin permissions (don't suggest things requiring admin)
+- Commit work before switching machines or ending sessions
