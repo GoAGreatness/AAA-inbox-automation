@@ -335,7 +335,7 @@ CREATE TABLE templates (
 
 ---
 
-### **Stage 4: Connect Add-in to Backend** ⏳
+### **Stage 4: Connect Add-in to Backend** ⏳ (Partially Done - Ollama integrated)
 **Goal**: Send email content to backend and get response
 
 **Tasks**:
