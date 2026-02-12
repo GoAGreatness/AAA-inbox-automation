@@ -1,6 +1,12 @@
 # Version B: Project Stack & Implementation Plan
 ## Outlook Web Add-in with Local Backend
 
+## ADMIN ACCESS TODO LIST
+When admin privileges are obtained, complete these:
+- [ ] Trust SSL cert in machine store: `certutil -addstore Root "backend\data\ssl\cert.pem"`
+- [ ] Start ssh-agent service: `Start-Service ssh-agent` then `ssh-add`
+- [ ] Add localhost to Trusted Sites in Internet Options (if still needed)
+
 ## Architecture Overview
 
 ```

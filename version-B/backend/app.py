@@ -11,6 +11,10 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Initialize database on startup
+from services.database_service import init_database, store_email, store_response, store_feedback, get_stats as db_get_stats
+init_database()
+
 # Configure CORS
 cors_origins = os.getenv('CORS_ORIGINS', 'https://localhost:3000').split(',')
 CORS(app, origins=cors_origins)
@@ -43,10 +47,16 @@ def generate_response():
     try:
         from services.ai_service import generate_email_response
 
+        # Store the incoming email in database
+        email_id = store_email(sender_email, sender_name, subject, body)
+
         result = generate_email_response(subject, sender_name, sender_email, body)
 
+        # Store the generated response in database
+        response_id = store_response(email_id, result['generated_response'], result['model'], result['generation_time_ms'])
+
         response = {
-            'response_id': f"gen-{int(__import__('time').time())}",
+            'response_id': response_id,
             'generated_response': result['generated_response'],
             'model': result['model'],
             'generation_time_ms': result['generation_time_ms']
@@ -68,7 +78,14 @@ def store_feedback():
     """Store feedback on generated response."""
     data = request.get_json()
 
-    # TODO: Implement feedback storage
+    response_id = data.get('response_id')
+    final_response = data.get('final_response', '')
+    was_edited = data.get('was_edited', False)
+    user_rating = data.get('user_rating')
+    edit_notes = data.get('edit_notes', '')
+
+    store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
+
     return jsonify({
         'success': True,
         'message': 'Feedback stored'
@@ -78,12 +95,8 @@ def store_feedback():
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """Get usage statistics."""
-    # TODO: Implement stats from database
-    return jsonify({
-        'total_generated': 0,
-        'avg_rating': 0,
-        'edit_rate': 0
-    })
+    stats = db_get_stats()
+    return jsonify(stats)
 
 
 if __name__ == '__main__':

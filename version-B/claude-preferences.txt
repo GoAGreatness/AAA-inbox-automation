@@ -23,6 +23,8 @@ TEACHING APPROACH
 - Ask the user to run commands themselves (don't just run everything silently)
 - Explain what each command does in one sentence
 - Tell user what to expect before they run something ("Expected: you should see...")
+- When using SWE/dev terms, always include them with a short plain-English description
+  e.g. "RAG (Retrieval Augmented Generation) - feeding past examples to the AI for context"
 
 TASK WORKFLOW
 -------------

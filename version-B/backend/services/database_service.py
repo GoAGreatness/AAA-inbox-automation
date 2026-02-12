@@ -1,0 +1,190 @@
+"""
+Database Service - Handles all SQLite operations for storing emails,
+responses, and feedback.
+
+Uses the Repository Pattern - separates database logic from business logic,
+so if we ever switch databases, only this file changes.
+"""
+import sqlite3
+import os
+from datetime import datetime
+
+# Database file path
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'database.db')
+
+
+def get_connection():
+    """Create and return a database connection."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row  # Returns rows as dictionaries
+    return conn
+
+
+def init_database():
+    """
+    Initialize database tables if they don't exist.
+    Called once when the backend starts.
+    This is a Migration - setting up or updating database structure.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Emails table - stores incoming emails we've generated responses for
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS emails (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_email TEXT,
+            sender_name TEXT,
+            subject TEXT,
+            body TEXT,
+            analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Responses table - stores AI-generated and final (edited) responses
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS responses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email_id INTEGER,
+            generated_response TEXT,
+            final_response TEXT,
+            was_edited BOOLEAN DEFAULT 0,
+            user_rating INTEGER,
+            edit_notes TEXT,
+            model_used TEXT,
+            generation_time_ms INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (email_id) REFERENCES emails(id)
+        )
+    ''')
+
+    # Sent emails table - stores historical sent replies for RAG context
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sent_emails (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_email TEXT,
+            sender_name TEXT,
+            subject TEXT,
+            original_body TEXT,
+            reply_body TEXT,
+            imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Templates table - common response patterns
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT,
+            template_text TEXT,
+            usage_count INTEGER DEFAULT 0
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+    print("Database initialized successfully!")
+
+
+def store_email(sender_email, sender_name, subject, body):
+    """Store an incoming email. Returns the email ID."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'INSERT INTO emails (sender_email, sender_name, subject, body) VALUES (?, ?, ?, ?)',
+        (sender_email, sender_name, subject, body)
+    )
+
+    email_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return email_id
+
+
+def store_response(email_id, generated_response, model_used, generation_time_ms):
+    """Store a generated response. Returns the response ID."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'INSERT INTO responses (email_id, generated_response, model_used, generation_time_ms) VALUES (?, ?, ?, ?)',
+        (email_id, generated_response, model_used, generation_time_ms)
+    )
+
+    response_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return response_id
+
+
+def store_feedback(response_id, final_response, was_edited, user_rating, edit_notes):
+    """Update a response with user feedback."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'UPDATE responses SET final_response=?, was_edited=?, user_rating=?, edit_notes=? WHERE id=?',
+        (final_response, was_edited, user_rating, edit_notes, response_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def store_sent_email(sender_email, sender_name, subject, original_body, reply_body):
+    """Store a historical sent email for RAG context."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'INSERT INTO sent_emails (sender_email, sender_name, subject, original_body, reply_body) VALUES (?, ?, ?, ?, ?)',
+        (sender_email, sender_name, subject, original_body, reply_body)
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def get_stats():
+    """Get usage statistics from the database."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT COUNT(*) as total FROM responses')
+    total = cursor.fetchone()['total']
+
+    cursor.execute('SELECT AVG(user_rating) as avg FROM responses WHERE user_rating IS NOT NULL')
+    avg_rating = cursor.fetchone()['avg'] or 0
+
+    cursor.execute('SELECT COUNT(*) as edited FROM responses WHERE was_edited = 1')
+    edited = cursor.fetchone()['edited']
+
+    edit_rate = edited / total if total > 0 else 0
+
+    cursor.execute('SELECT COUNT(*) as sent FROM sent_emails')
+    sent_count = cursor.fetchone()['sent']
+
+    conn.close()
+
+    return {
+        'total_generated': total,
+        'avg_rating': round(avg_rating, 1),
+        'edit_rate': round(edit_rate, 2),
+        'historical_emails': sent_count
+    }
+
+
+def get_sent_emails(limit=50):
+    """Get historical sent emails for RAG context."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'SELECT * FROM sent_emails ORDER BY imported_at DESC LIMIT ?',
+        (limit,)
+    )
+
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return rows
