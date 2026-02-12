@@ -54,5 +54,7 @@ GENERAL
 - Don't use emojis unless user does first
 - When creating files, just create them directly (don't ask user to paste code)
 - If a command fails, try a simpler alternative approach
-- Remember: user has no admin permissions (don't suggest things requiring admin)
+- Remember: user has no admin permissions (don't suggest things requiring admin) - PENDING admin access soon
 - Commit work before switching machines or ending sessions
+- Always do git status/checks before moving on to any new task
+- Always update this preferences file when user gives a new preference

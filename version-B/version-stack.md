@@ -203,12 +203,12 @@ version-B/
 **Goal**: Get development environment ready
 
 **Tasks**:
-- [ ] Install Node.js (for Office.js development tools)
+- [x] Install Node.js - NOT NEEDED (using Python serve.py instead)
 - [x] Install Python 3.10+ and create virtual environment
 - [x] Install Python dependencies
-- [ ] Install Yeoman and Office Add-in generator (optional)
+- [x] Install Yeoman and Office Add-in generator - SKIPPED (built add-in manually)
 - [x] Get Anthropic API key OR install Ollama (Ollama installed)
-- [ ] Generate self-signed SSL certificate for local HTTPS
+- [x] Generate self-signed SSL certificate for local HTTPS
 - [x] Test basic Flask app (HTTP working, HTTPS next)
 
 **Deliverable**: Working dev environment with HTTPS backend
@@ -282,16 +282,19 @@ CREATE TABLE templates (
 
 ---
 
-### **Stage 3: Simple Outlook Add-in Shell** ⏳ (Next)
+### **Stage 3: Simple Outlook Add-in Shell** ⏳ (In Progress)
 **Goal**: Create basic add-in that can read email
 
 **Tasks**:
-- [ ] Create manifest.xml with proper configuration
-- [ ] Create basic taskpane.html with Office.js reference
-- [ ] Implement email reading with Office.js
-- [ ] Add "Generate Response" button
-- [ ] Display email subject/sender in task pane
-- [ ] Sideload add-in in Outlook for testing
+- [x] Create manifest.xml with proper configuration
+- [x] Create basic taskpane.html with Office.js reference
+- [x] Implement email reading with Office.js
+- [x] Add "Generate Response" button
+- [x] Display email subject/sender in task pane
+- [x] Sideload add-in in Outlook for testing
+- [ ] Resolve SSL cert trust (BLOCKED - needs admin permissions)
+
+**Blocker**: Add-in loads but shows cert error. Need admin to trust self-signed cert.
 
 **Deliverable**: Add-in loads in Outlook and can read current email
 
