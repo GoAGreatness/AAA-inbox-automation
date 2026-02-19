@@ -1,0 +1,52 @@
+SERVICE FLOW - Email Response Generator
+========================================
+What happens when the user clicks "Generate Response"
+
+STEP 1: READ EMAIL (taskpane.js)
+- Office.js API reads current email (sender, subject, body)
+- Displays sender info in the task pane
+
+STEP 2: SEND REQUEST (taskpane.js → app.py)
+- POST request to https://localhost:5000/api/generate
+- Sends JSON: { subject, sender_name, sender_email, body }
+
+STEP 3: STORE EMAIL (app.py → database_service.py)
+- Incoming email saved to SQLite "emails" table
+- Returns email_id for linking
+
+STEP 4: BUILD PROMPT (ai_service.py)
+- Constructs prompt with instructions + email content
+- Tells AI to reply professionally as the user
+
+STEP 5: GENERATE RESPONSE (ai_service.py → Ollama)
+- Sends prompt to Ollama (local LLM server on port 11434)
+- Ollama runs llama3.2:3b model
+- Generates response token by token
+- THIS IS THE SLOW PART (30-60 seconds on CPU)
+
+STEP 6: STORE RESPONSE (app.py → database_service.py)
+- Generated response saved to SQLite "responses" table
+- Linked to the original email via email_id
+
+STEP 7: RETURN TO ADD-IN (app.py → taskpane.js)
+- JSON response: { response_id, generated_response, model, generation_time_ms }
+
+STEP 8: DISPLAY (taskpane.js)
+- Shows response in editable textarea
+- Shows generation time and model used
+- Enables "Insert into Reply" and "Copy" buttons
+
+STEP 9: USER EDITS (optional)
+- User can modify the response in textarea
+- Rate with 1-5 stars
+
+STEP 10: INSERT + FEEDBACK (taskpane.js → app.py)
+- "Insert into Reply" opens Outlook reply form with response
+- Feedback sent to /api/feedback (was it edited? rating? final text?)
+- Stored in database for future learning (Stage 7)
+
+---
+SERVERS REQUIRED:
+- Backend: https://localhost:5000 (Flask + Ollama)
+- Add-in:  https://localhost:3000 (serves HTML/JS/CSS)
+- Ollama:  http://localhost:11434 (auto-starts, runs AI model)

@@ -1,0 +1,33 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment
+.env
+
+# Database
+backend/data/*.db
+backend/data/chroma_db/
+
+# SSL Certificates
+backend/data/ssl/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Node
+node_modules/
+outlook-addin/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
