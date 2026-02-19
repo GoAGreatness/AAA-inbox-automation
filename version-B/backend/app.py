@@ -12,7 +12,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Initialize database on startup
-from services.database_service import init_database, store_email, store_response, store_feedback, get_stats as db_get_stats
+from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats
 init_database()
 
 # Configure CORS - allow all origins for development
@@ -84,7 +84,7 @@ def store_feedback():
     user_rating = data.get('user_rating')
     edit_notes = data.get('edit_notes', '')
 
-    store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
+    db_store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
 
     return jsonify({
         'success': True,
