@@ -6,6 +6,7 @@
 2. **Shared Mailbox** - Add-in doesn't appear for shared mailboxes (core project requirement!)
 3. **UI Customization** - Need more customization options in the add-in task pane
 4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
+5. **Background Generation** - When user minimizes add-in (top-left arrow), generation should continue in background and be ready when they reopen
 
 ## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
 - [x] Trust SSL cert in machine store (via .z admin account)
