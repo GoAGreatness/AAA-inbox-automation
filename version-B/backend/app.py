@@ -15,9 +15,9 @@ app = Flask(__name__)
 from services.database_service import init_database, store_email, store_response, store_feedback, get_stats as db_get_stats
 init_database()
 
-# Configure CORS
-cors_origins = os.getenv('CORS_ORIGINS', 'https://localhost:3000').split(',')
-CORS(app, origins=cors_origins)
+# Configure CORS - allow all origins for development
+# Outlook add-in runs in embedded browser with different origin
+CORS(app, origins="*", supports_credentials=False)
 
 # Configuration
 app.config['DEBUG'] = os.getenv('DEBUG', 'True') == 'True'

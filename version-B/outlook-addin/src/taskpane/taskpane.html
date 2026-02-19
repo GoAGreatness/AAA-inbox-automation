@@ -100,11 +100,99 @@
             text-align: center;
             color: #666;
         }
+
+        .response-section {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .response-section.visible {
+            display: block;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .response-header span {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .response-meta {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-buttons button {
+            width: auto;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .rating-section {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .rating-section span {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stars {
+            display: inline-flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .stars button {
+            width: 30px;
+            padding: 4px;
+            font-size: 16px;
+            background: #eee;
+            color: #ccc;
+            margin: 0;
+        }
+
+        .stars button.active {
+            background: #fff3cd;
+            color: #ffc107;
+        }
+
+        .stars button:hover {
+            background: #fff3cd;
+            color: #ffc107;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>📧 Email Response Generator</h2>
+        <h2>Email Response Generator</h2>
 
         <div class="email-info" id="emailInfo">
             <p><strong>From:</strong> <span id="senderName">-</span></p>
@@ -113,16 +201,39 @@
         </div>
 
         <button id="generateBtn" onclick="generateResponse()">
-            ✨ Generate Response
+            Generate Response
         </button>
 
         <div id="status" class="status"></div>
 
-        <textarea id="response" placeholder="Generated response will appear here..."></textarea>
+        <div id="responseSection" class="response-section">
+            <div class="response-header">
+                <strong>Generated Response:</strong>
+                <span id="responseMeta"></span>
+            </div>
 
-        <button id="insertBtn" onclick="insertResponse()" disabled>
-            📝 Insert into Reply
-        </button>
+            <textarea id="response" placeholder="Generated response will appear here..."></textarea>
+
+            <div class="action-buttons">
+                <button id="copyBtn" class="btn-secondary" onclick="copyResponse()">
+                    Copy
+                </button>
+                <button id="insertBtn" class="btn-success" onclick="insertResponse()">
+                    Insert into Reply
+                </button>
+            </div>
+
+            <div class="rating-section">
+                <span>Rate this response:</span><br>
+                <div class="stars">
+                    <button onclick="rateResponse(1)">&#9733;</button>
+                    <button onclick="rateResponse(2)">&#9733;</button>
+                    <button onclick="rateResponse(3)">&#9733;</button>
+                    <button onclick="rateResponse(4)">&#9733;</button>
+                    <button onclick="rateResponse(5)">&#9733;</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="taskpane.js"></script>

@@ -1,10 +1,15 @@
 # Version B: Project Stack & Implementation Plan
 ## Outlook Web Add-in with Local Backend
 
-## ADMIN ACCESS TODO LIST
-When admin privileges are obtained, complete these:
-- [ ] Trust SSL cert in machine store: `certutil -addstore Root "backend\data\ssl\cert.pem"`
-- [ ] Start ssh-agent service: `Start-Service ssh-agent` then `ssh-add`
+## KNOWN ISSUES / FUTURE IMPROVEMENTS
+1. **AI Context** - Model doesn't understand it should reply as the logged-in user (first person)
+2. **Shared Mailbox** - Add-in doesn't appear for shared mailboxes (core project requirement!)
+3. **UI Customization** - Need more customization options in the add-in task pane
+4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
+
+## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
+- [x] Trust SSL cert in machine store (via .z admin account)
+- [x] Start ssh-agent service + add SSH key
 - [ ] Add localhost to Trusted Sites in Internet Options (if still needed)
 
 ## Architecture Overview
@@ -288,7 +293,7 @@ CREATE TABLE templates (
 
 ---
 
-### **Stage 3: Simple Outlook Add-in Shell** ⏳ (In Progress)
+### **Stage 3: Simple Outlook Add-in Shell** ✅ (Complete)
 **Goal**: Create basic add-in that can read email
 
 **Tasks**:
@@ -298,9 +303,9 @@ CREATE TABLE templates (
 - [x] Add "Generate Response" button
 - [x] Display email subject/sender in task pane
 - [x] Sideload add-in in Outlook for testing
-- [ ] Resolve SSL cert trust (BLOCKED - needs admin permissions)
+- [x] Resolve SSL cert trust (admin access obtained)
 
-**Blocker**: Add-in loads but shows cert error. Need admin to trust self-signed cert.
+**Completed**: 2026-02-12
 
 **Deliverable**: Add-in loads in Outlook and can read current email
 
@@ -341,15 +346,17 @@ CREATE TABLE templates (
 
 ---
 
-### **Stage 4: Connect Add-in to Backend** ⏳ (Partially Done - Ollama integrated)
+### **Stage 4: Connect Add-in to Backend** ✅ (Complete)
 **Goal**: Send email content to backend and get response
 
 **Tasks**:
-- [ ] Implement API client in add-in (fetch calls)
-- [ ] Send email content to `POST /api/generate`
-- [ ] Display loading state while generating
-- [ ] Show generated response in task pane
-- [ ] Add error handling for API failures
+- [x] Implement API client in add-in (fetch calls)
+- [x] Send email content to `POST /api/generate`
+- [x] Display loading state while generating
+- [x] Show generated response in task pane
+- [x] Add error handling for API failures (timeout, server down, etc.)
+
+**Completed**: 2026-02-12
 - [ ] Test end-to-end: email → backend → response display
 
 **Deliverable**: Can generate and display AI responses in add-in

@@ -80,14 +80,20 @@ async function generateResponse() {
             body: body
         };
 
-        // Call backend API
+        // Call backend API with timeout (AbortController - cancels request after set time)
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+
         const response = await fetch(`${API_URL}/api/generate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(emailData)
+            body: JSON.stringify(emailData),
+            signal: controller.signal
         });
+
+        clearTimeout(timeout);
 
         if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
@@ -95,17 +101,27 @@ async function generateResponse() {
 
         const result = await response.json();
 
-        // Display generated response
+        // Show response section and display generated response
+        $('#responseSection').className = 'response-section visible';
         $('#response').value = result.generated_response;
+        $('#responseMeta').textContent = `${(result.generation_time_ms / 1000).toFixed(1)}s | ${result.model}`;
 
-        // Enable insert button
-        $('#insertBtn').disabled = false;
+        // Store response ID for feedback
+        window.currentResponseId = result.response_id;
+        window.originalResponse = result.generated_response;
 
-        showStatus('Response generated successfully!', 'success');
+        showStatus('Response generated! Edit if needed, then insert.', 'success');
 
     } catch (error) {
         console.error('Error generating response:', error);
-        showStatus(`Error: ${error.message}`, 'error');
+
+        if (error.name === 'AbortError') {
+            showStatus('Request timed out - AI took too long. Try again.', 'error');
+        } else if (error.message.includes('Failed to fetch')) {
+            showStatus('Cannot reach backend. Is the server running?', 'error');
+        } else {
+            showStatus(`Error: ${error.message}`, 'error');
+        }
     } finally {
         // Re-enable button
         btn.disabled = false;
@@ -141,6 +157,9 @@ function insertResponse() {
         return;
     }
 
+    // Send feedback before inserting
+    sendFeedback();
+
     const item = Office.context.mailbox.item;
 
     // Display reply form with generated response
@@ -149,6 +168,66 @@ function insertResponse() {
     });
 
     showStatus('Response inserted into reply!', 'success');
+}
+
+/**
+ * Copy response to clipboard
+ */
+function copyResponse() {
+    const responseText = $('#response').value;
+
+    if (!responseText) {
+        showStatus('No response to copy', 'error');
+        return;
+    }
+
+    navigator.clipboard.writeText(responseText).then(() => {
+        showStatus('Copied to clipboard!', 'success');
+    }).catch(() => {
+        // Fallback for older browsers
+        $('#response').select();
+        document.execCommand('copy');
+        showStatus('Copied to clipboard!', 'success');
+    });
+}
+
+/**
+ * Rate response (1-5 stars)
+ */
+function rateResponse(rating) {
+    window.currentRating = rating;
+
+    // Update star display
+    const stars = document.querySelectorAll('.stars button');
+    stars.forEach((star, index) => {
+        star.className = index < rating ? 'active' : '';
+    });
+
+    showStatus(`Rated ${rating}/5 - feedback saved on insert`, 'success');
+}
+
+/**
+ * Send feedback to backend
+ * Tracks whether user edited the response and their rating
+ */
+function sendFeedback() {
+    const finalResponse = $('#response').value;
+    const wasEdited = finalResponse !== window.originalResponse;
+
+    const feedbackData = {
+        response_id: window.currentResponseId,
+        final_response: finalResponse,
+        was_edited: wasEdited,
+        user_rating: window.currentRating || null,
+        edit_notes: wasEdited ? 'User edited response' : ''
+    };
+
+    // Fire and forget - don't block insertion
+    fetch(`${API_URL}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedbackData)
+    }).catch(err => console.error('Feedback error:', err));
 }
 
 /**
