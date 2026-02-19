@@ -82,7 +82,7 @@ async function generateResponse() {
 
         // Call backend API with timeout (AbortController - cancels request after set time)
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 300000); // 5 min timeout
+        const timeout = setTimeout(() => controller.abort(), 1800000); // 30 min timeout
 
         const response = await fetch(`${API_URL}/api/generate`, {
             method: 'POST',
