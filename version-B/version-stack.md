@@ -398,20 +398,22 @@ async function generateResponse() {
 
 ---
 
-### **Stage 5: Response Editing & Insertion** ⏳
+### **Stage 5: Response Editing & Insertion** ✅ (Complete)
 **Goal**: Allow user to edit and insert response into Outlook
 
 **Tasks**:
-- [ ] Add editable textarea for generated response
-- [ ] Implement "Insert into Reply" button
-- [ ] Use Office.js to create/populate reply email
-- [ ] Add "Copy to Clipboard" fallback option
-- [ ] Style UI with Bootstrap or Fluent UI
-- [ ] Add keyboard shortcuts for efficiency
+- [x] Add editable textarea for generated response
+- [x] Implement "Insert into Reply" button
+- [x] Use Office.js to create/populate reply email
+- [x] Add "Copy to Clipboard" fallback option
+- [x] Star rating (1-5) with feedback loop
+- [x] Auto-send feedback on insert (tracks edits)
+- [ ] Style UI with Bootstrap or Fluent UI (deferred - user will work on personally)
+- [ ] Add keyboard shortcuts for efficiency (deferred)
 
-**Deliverable**: Full workflow from generation to insertion working
+**Deliverable**: Full workflow from generation to insertion working ✅
 
-**Estimated Time**: 2-3 hours
+**Completed**: 2026-02-12
 
 **Office.js Reply Insertion**:
 ```javascript
