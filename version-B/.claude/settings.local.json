@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ollama:*)",
+      "Bash(if [ -d \"venv\" ])",
+      "Bash(then echo \"venv exists\")",
+      "Bash(else echo \"venv not found\")",
+      "Bash(fi)",
+      "Bash(python -m venv:*)",
+      "Bash(dir:*)"
+    ]
+  }
+}
