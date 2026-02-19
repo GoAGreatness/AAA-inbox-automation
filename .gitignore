@@ -1,0 +1,20 @@
+# Security - prevent accidental commits of sensitive files
+*.pem
+*.key
+*.env
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Database
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
