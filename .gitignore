@@ -12,6 +12,11 @@ __pycache__/
 # Database
 *.db
 
+# Sensitive data - imported emails, user data
+**/email-imports/
+*.msg
+*.eml
+
 # OS
 .DS_Store
 Thumbs.db
