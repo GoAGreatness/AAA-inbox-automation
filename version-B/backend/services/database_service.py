@@ -133,7 +133,7 @@ def store_feedback(response_id, final_response, was_edited, user_rating, edit_no
 
 
 def store_sent_email(sender_email, sender_name, subject, original_body, reply_body):
-    """Store a historical sent email for RAG context."""
+    """Store a historical sent email for RAG context. Returns the email ID."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -142,8 +142,10 @@ def store_sent_email(sender_email, sender_name, subject, original_body, reply_bo
         (sender_email, sender_name, subject, original_body, reply_body)
     )
 
+    email_id = cursor.lastrowid
     conn.commit()
     conn.close()
+    return email_id
 
 
 def get_stats():

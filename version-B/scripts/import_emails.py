@@ -25,8 +25,8 @@ def parse_msg_file(filepath):
         msg = extract_msg.Message(filepath)
 
         data = {
-            'sender_email': msg.sender or '',
-            'sender_name': msg.senderName or '',
+            'sender_email': msg.to or '',
+            'sender_name': msg.sender or '',
             'subject': msg.subject or '',
             'body': msg.body or '',
         }
