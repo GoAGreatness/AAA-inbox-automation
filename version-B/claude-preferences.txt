@@ -63,3 +63,12 @@ GENERAL
 - Remind user to git commit after EVERY change/step in a stage (no matter how small)
   - Exception: Don't prompt commits for standalone version-stack.md or preference doc updates
   - Only skip if no other files were changed alongside them
+
+DATA SECURITY
+-------------
+- NEVER allow sensitive data (emails, user data, organizational info) to be committed to git
+- Always add data directories to BOTH root and version-B .gitignore
+- Think proactively about data exposure when implementing features
+- All user/email data stays LOCAL ONLY (SQLite, ChromaDB, file imports)
+- No sensitive info in code, comments, prompts, or config files
+- When creating sample/test data, use generic placeholders (test@example.com, "John Doe", etc.)

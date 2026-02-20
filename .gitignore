@@ -1,0 +1,25 @@
+# Security - prevent accidental commits of sensitive files
+*.pem
+*.key
+*.env
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Database
+*.db
+
+# Sensitive data - imported emails, user data
+**/email-imports/
+*.msg
+*.eml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
