@@ -5,9 +5,15 @@ flask-cors==4.0.0
 # AI/ML
 ollama==0.3.3
 
-# Vector DB (optional for later)
-# chromadb==0.4.22
-# sentence-transformers==2.2.2
+# Vector DB & Embeddings (RAG pipeline)
+chromadb
+sentence-transformers
+
+# SSL Certificate Generation
+cryptography
+
+# Email Import (.msg parsing)
+extract-msg
 
 # Utilities
 python-dotenv==1.0.0
