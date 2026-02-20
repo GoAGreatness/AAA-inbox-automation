@@ -12,7 +12,8 @@ load_dotenv()
 app = Flask(__name__)
 
 # Initialize database on startup
-from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats
+from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id
+from services.vector_service import add_sent_email, get_collection_count
 init_database()
 
 # Configure CORS - allow all origins for development
@@ -75,7 +76,11 @@ def generate_response():
 
 @app.route('/api/feedback', methods=['POST'])
 def store_feedback():
-    """Store feedback on generated response."""
+    """
+    Store feedback and auto-learn from approved responses.
+    This is the Feedback Loop - approved responses get added to the
+    vector store so future generations learn from them.
+    """
     data = request.get_json()
 
     response_id = data.get('response_id')
@@ -84,18 +89,35 @@ def store_feedback():
     user_rating = data.get('user_rating')
     edit_notes = data.get('edit_notes', '')
 
+    # Store feedback in database
     db_store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
+
+    # Auto-learn: add approved response to vector store
+    # This means future queries will find this response as a similar example
+    try:
+        email_data = get_email_by_response_id(response_id)
+        if email_data and final_response:
+            vector_id = f"approved-{response_id}"
+            add_sent_email(
+                email_id=vector_id,
+                subject=email_data['subject'],
+                original_body=email_data['body'],
+                reply_body=final_response
+            )
+    except Exception as e:
+        print(f"Auto-learn error (non-blocking): {e}")
 
     return jsonify({
         'success': True,
-        'message': 'Feedback stored'
+        'message': 'Feedback stored and response added to knowledge base'
     })
 
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    """Get usage statistics."""
+    """Get usage statistics including learning progress."""
     stats = db_get_stats()
+    stats['vector_store_count'] = get_collection_count()
     return jsonify(stats)
 
 

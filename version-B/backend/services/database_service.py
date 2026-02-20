@@ -148,6 +148,21 @@ def store_sent_email(sender_email, sender_name, subject, original_body, reply_bo
     return email_id
 
 
+def get_email_by_response_id(response_id):
+    """Get the original email linked to a response. Used for auto-learning."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'SELECT e.* FROM emails e JOIN responses r ON e.id = r.email_id WHERE r.id = ?',
+        (response_id,)
+    )
+
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 def get_stats():
     """Get usage statistics from the database."""
     conn = get_connection()
