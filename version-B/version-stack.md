@@ -3,7 +3,7 @@
 
 ## KNOWN ISSUES / FUTURE IMPROVEMENTS
 1. **AI Context** - ✅ Fixed - model now replies as the logged-in user (first person, with signature)
-2. **Shared Mailbox** - VBA macro can read shared mailbox emails (test needed)
+2. **Shared Mailbox** - ✅ Fixed - VBA macro reads shared mailbox emails correctly (tested 2026-02-24)
 3. **UI Customization** - More customization options in the Chrome web app
 4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
 5. **Sent Email Import** - EWS blocked by GoA policy; Graph API needed for programmatic import
