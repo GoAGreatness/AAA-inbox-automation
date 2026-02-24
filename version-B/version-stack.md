@@ -3,12 +3,12 @@
 
 ## KNOWN ISSUES / FUTURE IMPROVEMENTS
 1. **AI Context** - Model doesn't understand it should reply as the logged-in user (first person)
-2. **Shared Mailbox** - Add-in doesn't appear for shared mailboxes (core project requirement!)
-3. **UI Customization** - Need more customization options in the add-in task pane
+2. **Shared Mailbox** - VBA macro can read shared mailbox emails (test needed)
+3. **UI Customization** - More customization options in the Chrome web app
 4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
-5. **Background Generation** - When user minimizes add-in (top-left arrow), generation should continue in background and be ready when they reopen
+5. **Sent Email Import** - EWS blocked by GoA policy; Graph API needed for programmatic import
 6. **User Setup/Config** - Per-user configuration (name, email, role) so AI generates from the correct perspective. Important for multi-user deployment.
-7. **Graph API Integration** - Bulk import sent emails programmatically (replaces manual drag-and-drop)
+7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 
 ## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
 - [x] Trust SSL cert in machine store (via .z admin account)
@@ -496,15 +496,41 @@ Response:"""
 
 ---
 
-### **Stage 8: Polish & Production Readiness** ⏳
+### **Stage 8: VBA + Chrome Web App (Add-in Replacement)** ✅ (Complete)
+**Goal**: Replace broken Office.js add-in with a reliable Outlook → Chrome workflow
+
+**Background**: Office.js manifest add-in was abandoned after GoA Exchange policies blocked
+ReadWriteMailbox permission and Outlook silently rejected manifest installs. Pivoted to
+VBA macro + standalone Chrome web app approach.
+
+**Tasks**:
+- [x] Create VBA macro (scripts/email_response_macro.vba) - reads selected email, opens Chrome
+- [x] Create standalone web app (outlook-addin/src/webapp/index.html + webapp.js)
+- [x] Auto-generate response on Chrome page load (no extra click needed)
+- [x] RAG badge showing how many past emails were used as context
+- [x] Animated loading bar during generation
+- [x] Copy to clipboard + star rating + feedback loop (auto-learn still works)
+- [x] Add macro button to Outlook Quick Access Toolbar
+
+**Deliverable**: Click email → click toolbar button → Chrome opens → response auto-generates ✅
+
+**Completed**: 2026-02-24
+
+**How it works**: VBA macro reads the selected email from Outlook via COM, URL-encodes
+the subject/sender/body, and opens Chrome with the webapp URL. The webapp reads those
+URL params on load and immediately calls the backend to generate a response.
+
+---
+
+### **Stage 9: Polish & Production Readiness** ⏳
 **Goal**: Make it robust and user-friendly
 
 **Tasks**:
+- [ ] EWS / Graph API for auto-importing sent emails (EWS blocked by GoA policy - needs Graph API)
 - [ ] Add comprehensive error handling
 - [ ] Implement logging (backend and add-in)
 - [ ] Add offline detection and graceful degradation
 - [ ] Create user documentation
-- [ ] Add keyboard shortcuts
 - [ ] Performance optimization (caching, etc.)
 - [ ] Security review (API keys, CORS, etc.)
 - [ ] Package for deployment (if sharing with team)
