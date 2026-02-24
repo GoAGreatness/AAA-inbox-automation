@@ -62,6 +62,9 @@ Sub GenerateEmailResponse()
              "&sender_email=" & URLEncode(strSenderEmail) & _
              "&body=" & URLEncode(strBody)
 
+    ' DEBUG - show URL before opening
+    MsgBox "URL length: " & Len(strURL) & Chr(13) & "First 200 chars: " & Left(strURL, 200), vbInformation, "Debug URL"
+
     ' Open Chrome
     Set objShell = CreateObject("WScript.Shell")
     objShell.Run "cmd /c start chrome """ & strURL & """", 0, False

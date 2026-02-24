@@ -81,6 +81,19 @@ def init_database():
         )
     ''')
 
+    # User config table - stores user identity for AI context
+    # Single row (id=1) updated in place
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_config (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            full_name TEXT,
+            role TEXT,
+            signature TEXT,
+            use_signature BOOLEAN DEFAULT 1,
+            configured_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     conn.commit()
     conn.close()
     print("Database initialized successfully!")
@@ -190,6 +203,34 @@ def get_stats():
         'edit_rate': round(edit_rate, 2),
         'historical_emails': sent_count
     }
+
+
+def get_user_config():
+    """Get saved user config. Returns None if not yet configured."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM user_config WHERE id = 1')
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def save_user_config(full_name, role, signature, use_signature):
+    """Save or update user config (upsert - insert or replace)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO user_config (id, full_name, role, signature, use_signature, configured_at)
+        VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(id) DO UPDATE SET
+            full_name=excluded.full_name,
+            role=excluded.role,
+            signature=excluded.signature,
+            use_signature=excluded.use_signature,
+            configured_at=excluded.configured_at
+    ''', (full_name, role, signature, use_signature))
+    conn.commit()
+    conn.close()
 
 
 def get_sent_emails(limit=50):

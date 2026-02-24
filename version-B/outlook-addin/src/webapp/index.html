@@ -361,6 +361,48 @@
 
     </div>
 
+    <!-- First-run setup modal -->
+    <div id="setupModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:480px; width:90%; margin:auto;">
+            <h2 style="color:#0078d4; margin:0 0 6px 0; font-size:18px;">Welcome! Quick Setup</h2>
+            <p style="color:#666; font-size:13px; margin:0 0 20px 0;">
+                This only takes a moment. The AI will use this to sign responses as you.
+            </p>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Full Name *</label>
+            <input id="setupName" type="text" placeholder="e.g. Greatness Ransome-Kuti"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Role / Title</label>
+            <input id="setupRole" type="text" placeholder="e.g. ARTS Administrator | MCU | Technology and Innovation"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Email Signature (optional)</label>
+            <p style="font-size:12px; color:#888; margin:4px 0 6px 0;">
+                Paste your Outlook signature here (find it under Insert → Signature in Outlook).
+                Leave blank to use just your name and role.
+            </p>
+            <textarea id="setupSignature" placeholder="e.g.&#10;Greatness Ransome-Kuti&#10;ARTS Administrator | A.I.M. Developer&#10;Ministerial Correspondence Unit (MCU)&#10;Technology and Innovation&#10;Government of Alberta"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:13px; min-height:100px; box-sizing:border-box; font-family:inherit;
+                       margin-bottom:14px; resize:vertical;"></textarea>
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:20px; cursor:pointer;">
+                <input id="setupUseSig" type="checkbox" checked style="width:16px; height:16px;">
+                Always include signature in generated responses
+            </label>
+
+            <button onclick="saveSetup()"
+                style="width:100%; padding:12px; background:#0078d4; color:white; border:none;
+                       border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                Save &amp; Continue
+            </button>
+        </div>
+    </div>
+
     <script src="webapp.js"></script>
 </body>
 </html>

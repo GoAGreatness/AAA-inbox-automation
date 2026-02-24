@@ -12,7 +12,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Initialize database on startup
-from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id
+from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config
 from services.vector_service import add_sent_email, get_collection_count
 init_database()
 
@@ -51,7 +51,8 @@ def generate_response():
         # Store the incoming email in database
         email_id = store_email(sender_email, sender_name, subject, body)
 
-        result = generate_email_response(subject, sender_name, sender_email, body)
+        user_config = get_user_config()
+        result = generate_email_response(subject, sender_name, sender_email, body, user_config)
 
         # Store the generated response in database
         response_id = store_response(email_id, result['generated_response'], result['model'], result['generation_time_ms'])
@@ -111,6 +112,26 @@ def store_feedback():
         'success': True,
         'message': 'Feedback stored and response added to knowledge base'
     })
+
+
+@app.route('/api/user-config', methods=['GET'])
+def get_config():
+    """Get current user config. Used by webapp to check if setup is needed."""
+    config = get_user_config()
+    return jsonify(config if config else {})
+
+
+@app.route('/api/user-config', methods=['POST'])
+def save_config():
+    """Save user config (name, role, signature)."""
+    data = request.get_json()
+    save_user_config(
+        full_name=data.get('full_name', ''),
+        role=data.get('role', ''),
+        signature=data.get('signature', ''),
+        use_signature=data.get('use_signature', True)
+    )
+    return jsonify({'success': True, 'message': 'Configuration saved'})
 
 
 @app.route('/api/stats', methods=['GET'])

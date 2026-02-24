@@ -2,13 +2,14 @@
 ## Outlook Web Add-in with Local Backend
 
 ## KNOWN ISSUES / FUTURE IMPROVEMENTS
-1. **AI Context** - Model doesn't understand it should reply as the logged-in user (first person)
+1. **AI Context** - ✅ Fixed - model now replies as the logged-in user (first person, with signature)
 2. **Shared Mailbox** - VBA macro can read shared mailbox emails (test needed)
 3. **UI Customization** - More customization options in the Chrome web app
 4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
 5. **Sent Email Import** - EWS blocked by GoA policy; Graph API needed for programmatic import
-6. **User Setup/Config** - Per-user configuration (name, email, role) so AI generates from the correct perspective. Important for multi-user deployment.
+6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
+8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
 
 ## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
 - [x] Trust SSL cert in machine store (via .z admin account)

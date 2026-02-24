@@ -9,10 +9,11 @@ import os
 from services.vector_service import find_similar_emails
 
 
-def generate_email_response(subject, sender_name, sender_email, body):
+def generate_email_response(subject, sender_name, sender_email, body, user_config=None):
     """
     Send email data to Ollama and get an AI-generated response.
     Searches for similar past emails to use as context.
+    Uses user_config (name, role, signature) to personalise the response.
     Returns dict with generated response and metadata.
     """
     model = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
@@ -21,24 +22,46 @@ def generate_email_response(subject, sender_name, sender_email, body):
     similar = find_similar_emails(subject, body)
     context = _build_context(similar)
 
-    prompt = f"""You are a professional email assistant helping respond to emails for a shared inbox.
+    # Build user identity section from config
+    if user_config and user_config.get('full_name'):
+        user_name = user_config['full_name']
+        identity = f"You are {user_name}, responding to this email on behalf of yourself."
+    else:
+        identity = "You are a professional staff member responding to this email."
+
+    # Build signature instruction
+    use_sig = user_config and user_config.get('use_signature')
+    has_custom_sig = user_config and user_config.get('signature', '').strip()
+
+    if use_sig and has_custom_sig:
+        signature_instruction = f"8. End the email with EXACTLY this signature, do not modify it:\n{user_config['signature']}"
+    elif use_sig and user_config and user_config.get('full_name'):
+        sig = user_config['full_name']
+        if user_config.get('role'):
+            sig += f"\n{user_config['role']}"
+        signature_instruction = f"8. Sign off as:\n{sig}"
+    else:
+        signature_instruction = "8. Do NOT include any signature or sign-off at the end"
+
+    prompt = f"""You are a professional email assistant. {identity}
 
 {context}
 
-Write a professional, helpful response to this email:
+Write a professional, helpful response to this email IN FIRST PERSON (as yourself, not as an assistant):
 
 From: {sender_name} <{sender_email}>
 Subject: {subject}
 Body: {body}
 
 Instructions:
-1. Address the sender by name
-2. Be professional and helpful
-3. Answer any questions in the email
-4. Keep it concise (2-3 paragraphs)
-5. End with a professional sign-off
+1. Write as yourself in first person (use "I", not "we" unless appropriate)
+2. Address the sender by name
+3. Be professional and helpful
+4. Answer any questions in the email
+5. Keep it concise (2-3 paragraphs)
 6. Do NOT include a subject line, just the response body
 7. If similar past responses are provided above, match their tone and style
+{signature_instruction}
 
 Response:"""
 

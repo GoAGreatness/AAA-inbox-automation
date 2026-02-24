@@ -12,9 +12,9 @@ let originalResponse = null;
 let currentRating = null;
 
 /**
- * On page load: read URL params, populate UI, auto-generate
+ * On page load: check user config, populate UI, auto-generate
  */
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const params = new URLSearchParams(window.location.search);
 
     const subject = params.get('subject') || '';
@@ -27,11 +27,82 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('senderEmail').textContent = senderEmail || '-';
     document.getElementById('subject').textContent = subject || '-';
 
+    // Check if user has been configured - show setup modal on first run
+    try {
+        const res = await fetch(`${API_URL}/api/user-config`);
+        const config = await res.json();
+
+        if (!config.full_name) {
+            // First run - show setup modal before generating
+            showSetupModal(subject, senderName, senderEmail, body);
+            return;
+        }
+    } catch (e) {
+        console.warn('Could not check user config:', e);
+    }
+
     // Auto-generate if email data was passed in
     if (subject || body) {
         generateResponse(subject, senderName, senderEmail, body);
     }
 });
+
+
+/**
+ * Show the first-run setup modal
+ */
+function showSetupModal(subject, senderName, senderEmail, body) {
+    const modal = document.getElementById('setupModal');
+    modal.style.display = 'flex';
+
+    // Store email data so we can generate after setup
+    modal.dataset.subject = subject;
+    modal.dataset.senderName = senderName;
+    modal.dataset.senderEmail = senderEmail;
+    modal.dataset.body = body;
+}
+
+
+/**
+ * Save setup config and proceed to generation
+ */
+async function saveSetup() {
+    const fullName = document.getElementById('setupName').value.trim();
+    if (!fullName) {
+        alert('Please enter your full name.');
+        return;
+    }
+
+    const config = {
+        full_name: fullName,
+        role: document.getElementById('setupRole').value.trim(),
+        signature: document.getElementById('setupSignature').value.trim(),
+        use_signature: document.getElementById('setupUseSig').checked
+    };
+
+    try {
+        await fetch(`${API_URL}/api/user-config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+    } catch (e) {
+        console.error('Failed to save config:', e);
+    }
+
+    // Hide modal and proceed with generation
+    const modal = document.getElementById('setupModal');
+    modal.style.display = 'none';
+
+    const subject = modal.dataset.subject;
+    const senderName = modal.dataset.senderName;
+    const senderEmail = modal.dataset.senderEmail;
+    const body = modal.dataset.body;
+
+    if (subject || body) {
+        generateResponse(subject, senderName, senderEmail, body);
+    }
+}
 
 /**
  * Generate AI response
