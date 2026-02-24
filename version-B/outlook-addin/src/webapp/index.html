@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Response Generator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: #0078d4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .email-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 6px 12px;
+            align-items: start;
+        }
+
+        .email-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .email-value {
+            font-size: 13px;
+            color: #222;
+            word-break: break-word;
+        }
+
+        .subject-value {
+            font-weight: 600;
+            color: #0078d4;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #0078d4;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #005a9e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,120,212,0.3);
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-copy:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+        }
+
+        .btn-copy.copied {
+            background: #155724;
+        }
+
+        .loading-bar {
+            height: 3px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 12px 0;
+            display: none;
+        }
+
+        .loading-bar.active {
+            display: block;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0078d4, #00bcf2, #0078d4);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            width: 100%;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .loading-text {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .loading-text.active {
+            display: block;
+        }
+
+        #responseSection {
+            display: none;
+        }
+
+        #responseSection.visible {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 220px;
+            padding: 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #222;
+            resize: vertical;
+            transition: border-color 0.15s;
+            margin-bottom: 12px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+
+        .response-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .response-meta-text {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .rag-badge {
+            font-size: 11px;
+            background: #e8f4fd;
+            color: #0078d4;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .rating-label {
+            font-size: 13px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .stars {
+            display: flex;
+            gap: 4px;
+        }
+
+        .star {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #ddd;
+            padding: 0;
+            width: auto;
+            line-height: 1;
+            transition: color 0.1s, transform 0.1s;
+        }
+
+        .star:hover, .star.active {
+            color: #ffc107;
+            transform: scale(1.15);
+        }
+
+        .status-bar {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .status-bar.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status-bar.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div class="header-icon">&#9993;</div>
+            <div>
+                <h1>Email Response Generator</h1>
+                <p>AI-powered responses for your shared inbox</p>
+            </div>
+        </div>
+
+        <!-- Email Info -->
+        <div class="card">
+            <div class="card-title">Incoming Email</div>
+            <div class="email-grid">
+                <span class="email-label">From:</span>
+                <span class="email-value" id="senderName">-</span>
+                <span class="email-label">Email:</span>
+                <span class="email-value" id="senderEmail">-</span>
+                <span class="email-label">Subject:</span>
+                <span class="email-value subject-value" id="subject">-</span>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div id="statusBar" class="status-bar"></div>
+
+        <!-- Loading -->
+        <div class="loading-text" id="loadingText">Generating response using AI + your email history...</div>
+        <div class="loading-bar" id="loadingBar">
+            <div class="loading-bar-fill"></div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="card" id="generateCard">
+            <button class="btn btn-primary" id="generateBtn" onclick="generateResponse()">
+                &#10024; Generate Response
+            </button>
+            <p class="hint">Uses your past sent emails as context for better responses</p>
+        </div>
+
+        <!-- Response Section -->
+        <div id="responseSection">
+            <div class="card">
+                <div class="card-title">Generated Response</div>
+
+                <div class="response-meta">
+                    <span class="response-meta-text" id="responseMeta"></span>
+                    <span class="rag-badge" id="ragBadge"></span>
+                </div>
+
+                <textarea id="response" placeholder="Response will appear here..."></textarea>
+
+                <button class="btn btn-copy" id="copyBtn" onclick="copyResponse()">
+                    &#128203; Copy to Clipboard
+                </button>
+
+                <p class="hint">Copy the response, then paste it into your Outlook reply</p>
+
+                <div class="rating-row">
+                    <span class="rating-label">Rate this response:</span>
+                    <div class="stars">
+                        <button class="star" onclick="rateResponse(1)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(2)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(3)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(4)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(5)">&#9733;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="webapp.js"></script>
+</body>
+</html>
