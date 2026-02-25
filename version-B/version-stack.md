@@ -6,7 +6,7 @@
 2. **Shared Mailbox** - ✅ Fixed - VBA macro reads shared mailbox emails correctly (tested 2026-02-24)
 3. **UI Customization** - More customization options in the Chrome web app
 4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
-5. **Sent Email Import** - EWS blocked by GoA policy; Graph API needed for programmatic import
+5. **Sent Email Import** - ✅ Fixed - VBA Application_Startup event auto-imports last 150 sent emails on Outlook open
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.

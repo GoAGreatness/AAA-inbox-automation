@@ -134,6 +134,48 @@ def save_config():
     return jsonify({'success': True, 'message': 'Configuration saved'})
 
 
+@app.route('/api/import-sent', methods=['POST'])
+def import_sent_emails():
+    """
+    Receives sent emails from VBA macro and indexes them in ChromaDB.
+    Uses MD5 hash of subject+body as ID to prevent duplicate imports.
+    """
+    import hashlib
+    data = request.get_json()
+    emails = data.get('emails', [])
+
+    imported = 0
+    skipped = 0
+
+    for i, email in enumerate(emails):
+        subject = email.get('subject', '')
+        body = email.get('body', '')
+
+        if not body.strip():
+            skipped += 1
+            continue
+
+        try:
+            email_id = f"vba-{hashlib.md5((subject + body[:100]).encode()).hexdigest()[:12]}"
+            add_sent_email(
+                email_id=email_id,
+                subject=subject,
+                original_body='',
+                reply_body=body
+            )
+            imported += 1
+        except Exception as e:
+            skipped += 1
+
+    print(f"VBA import: {imported} imported, {skipped} skipped. Total: {get_collection_count()}")
+    return jsonify({
+        'success': True,
+        'imported': imported,
+        'skipped': skipped,
+        'vector_store_total': get_collection_count()
+    })
+
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """Get usage statistics including learning progress."""

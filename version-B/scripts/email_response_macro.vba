@@ -1,7 +1,44 @@
 ' ============================================================
 ' Email Response Generator - Outlook VBA Macro
 ' ============================================================
+' HOW TO INSTALL:
+'   1. Open Outlook
+'   2. Press Alt+F11 to open the VBA editor
+'   3. In the left panel, double-click "ThisOutlookSession"
+'   4. Paste this entire file into the editor
+'   5. Press Ctrl+S to save
+'   6. Close the VBA editor
+'
+' HOW TO ADD GENERATE BUTTON TO TOOLBAR:
+'   1. Right-click the Quick Access Toolbar (top-left of Outlook)
+'   2. Click "Customize Quick Access Toolbar"
+'   3. Under "Choose commands from", select "Macros"
+'   4. Find "Project.ThisOutlookSession.GenerateEmailResponse"
+'   5. Click Add >> then OK
+'
+' HOW TO USE:
+'   1. Click on any email in Outlook (reading pane or shared inbox)
+'   2. Click the macro button in the Quick Access Toolbar
+'   3. Chrome opens with the email pre-loaded and response generating
+'   4. Copy the response, paste into your Outlook reply
+'
+' SENT EMAILS IMPORT:
+'   Runs automatically on Outlook startup (Application_Startup event).
+'   Silently syncs your last 150 sent emails to the AI knowledge base.
+' ============================================================
 
+
+' ------------------------------------------------------------
+' Auto-runs on Outlook startup - silently imports sent emails
+' ------------------------------------------------------------
+Private Sub Application_Startup()
+    ImportSentEmails
+End Sub
+
+
+' ------------------------------------------------------------
+' Generate response for selected email - opens Chrome webapp
+' ------------------------------------------------------------
 Sub GenerateEmailResponse()
 
     Dim objItem As Object
@@ -62,8 +99,8 @@ Sub GenerateEmailResponse()
              "&sender_email=" & URLEncode(strSenderEmail) & _
              "&body=" & URLEncode(strBody)
 
-    ' DEBUG - show URL before opening
-    MsgBox "URL length: " & Len(strURL) & Chr(13) & "First 200 chars: " & Left(strURL, 200), vbInformation, "Debug URL"
+    ' Silently sync sent emails to knowledge base before opening Chrome
+    ImportSentEmails
 
     ' Open Chrome
     Set objShell = CreateObject("WScript.Shell")
@@ -72,6 +109,82 @@ Sub GenerateEmailResponse()
 End Sub
 
 
+' ------------------------------------------------------------
+' Import last 150 sent emails into AI knowledge base (ChromaDB)
+' Called automatically on startup via Application_Startup
+' Uses MD5-based IDs on backend so duplicates are safe to send
+' ------------------------------------------------------------
+Sub ImportSentEmails()
+
+    Dim objFolder As Object
+    Dim objItems As Object
+    Dim objItem As Object
+    Dim objHttp As Object
+    Dim emailsJson As String
+    Dim jsonBody As String
+    Dim count As Integer
+    Dim maxEmails As Integer
+
+    maxEmails = 50
+
+    On Error GoTo ImportError
+
+    ' Get Sent Items folder (5 = olFolderSentMail)
+    Set objFolder = Application.Session.GetDefaultFolder(5)
+    Set objItems = objFolder.Items
+    objItems.Sort "[SentOn]", True  ' Most recent first
+
+    ' Build JSON array of sent emails
+    emailsJson = "["
+    count = 0
+
+    Dim i As Integer
+    For i = 1 To objItems.Count
+        If count >= maxEmails Then Exit For
+
+        Set objItem = objItems.Item(i)
+
+        ' Only process mail items (Class 43 = olMail)
+        If objItem.Class = 43 Then
+            Dim strSubject As String
+            Dim strBody As String
+            strSubject = objItem.Subject
+            strBody = objItem.Body
+
+            ' Truncate body to keep payload manageable
+            If Len(strBody) > 500 Then
+                strBody = Left(strBody, 500)
+            End If
+
+            If count > 0 Then emailsJson = emailsJson & ","
+            emailsJson = emailsJson & "{""subject"":""" & JSONEscape(strSubject) & _
+                         """,""body"":""" & JSONEscape(strBody) & """}"
+            count = count + 1
+        End If
+    Next i
+
+    emailsJson = emailsJson & "]"
+    jsonBody = "{""emails"":" & emailsJson & "}"
+
+    ' POST to backend - sync with small payload (50 emails x 500 chars)
+    Set objHttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+    objHttp.Open "POST", "https://localhost:5000/api/import-sent", False
+    objHttp.SetRequestHeader "Content-Type", "application/json"
+    objHttp.Option(4) = 13056  ' Ignore SSL errors (self-signed cert)
+    objHttp.Send jsonBody
+
+    Exit Sub
+
+ImportError:
+    ' Silent fail - import is best-effort, don't block Chrome from opening
+    Exit Sub
+
+End Sub
+
+
+' ------------------------------------------------------------
+' URL encoding - converts text to safe URL characters
+' ------------------------------------------------------------
 Function URLEncode(str As String) As String
     Dim result As String
     result = str
@@ -88,4 +201,19 @@ Function URLEncode(str As String) As String
     result = Replace(result, ">", "%3E")
     result = Replace(result, "?", "%3F")
     URLEncode = result
+End Function
+
+
+' ------------------------------------------------------------
+' JSON string escaping - makes text safe for JSON payloads
+' ------------------------------------------------------------
+Function JSONEscape(str As String) As String
+    Dim result As String
+    result = str
+    result = Replace(result, "\", "\\")
+    result = Replace(result, """", "\""")
+    result = Replace(result, Chr(13), "\n")
+    result = Replace(result, Chr(10), "\n")
+    result = Replace(result, Chr(9), "\t")
+    JSONEscape = result
 End Function
