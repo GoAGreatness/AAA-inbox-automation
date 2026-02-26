@@ -129,7 +129,8 @@ def save_config():
         full_name=data.get('full_name', ''),
         role=data.get('role', ''),
         signature=data.get('signature', ''),
-        use_signature=data.get('use_signature', True)
+        use_signature=data.get('use_signature', True),
+        shared_mailbox_name=data.get('shared_mailbox_name', '')
     )
     return jsonify({'success': True, 'message': 'Configuration saved'})
 

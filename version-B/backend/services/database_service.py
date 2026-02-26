@@ -90,6 +90,7 @@ def init_database():
             role TEXT,
             signature TEXT,
             use_signature BOOLEAN DEFAULT 1,
+            shared_mailbox_name TEXT,
             configured_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -215,20 +216,21 @@ def get_user_config():
     return dict(row) if row else None
 
 
-def save_user_config(full_name, role, signature, use_signature):
+def save_user_config(full_name, role, signature, use_signature, shared_mailbox_name=''):
     """Save or update user config (upsert - insert or replace)."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO user_config (id, full_name, role, signature, use_signature, configured_at)
-        VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO user_config (id, full_name, role, signature, use_signature, shared_mailbox_name, configured_at)
+        VALUES (1, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(id) DO UPDATE SET
             full_name=excluded.full_name,
             role=excluded.role,
             signature=excluded.signature,
             use_signature=excluded.use_signature,
+            shared_mailbox_name=excluded.shared_mailbox_name,
             configured_at=excluded.configured_at
-    ''', (full_name, role, signature, use_signature))
+    ''', (full_name, role, signature, use_signature, shared_mailbox_name))
     conn.commit()
     conn.close()
 

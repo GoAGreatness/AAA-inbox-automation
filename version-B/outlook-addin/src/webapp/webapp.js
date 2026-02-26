@@ -77,7 +77,8 @@ async function saveSetup() {
         full_name: fullName,
         role: document.getElementById('setupRole').value.trim(),
         signature: document.getElementById('setupSignature').value.trim(),
-        use_signature: document.getElementById('setupUseSig').checked
+        use_signature: document.getElementById('setupUseSig').checked,
+        shared_mailbox_name: document.getElementById('setupSharedMailbox').value.trim()
     };
 
     try {
@@ -255,6 +256,62 @@ function sendFeedback() {
         })
     }).catch(err => console.error('Feedback error:', err));
 }
+
+/**
+ * Open settings modal - pre-fills with current saved config
+ */
+async function openSettings() {
+    try {
+        const res = await fetch(`${API_URL}/api/user-config`);
+        const config = await res.json();
+
+        document.getElementById('settingsName').value = config.full_name || '';
+        document.getElementById('settingsRole').value = config.role || '';
+        document.getElementById('settingsSignature').value = config.signature || '';
+        document.getElementById('settingsUseSig').checked = config.use_signature !== false;
+        document.getElementById('settingsSharedMailbox').value = config.shared_mailbox_name || '';
+    } catch (e) {
+        console.error('Could not load settings:', e);
+    }
+
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+/**
+ * Save updated settings
+ */
+async function saveSettings() {
+    const fullName = document.getElementById('settingsName').value.trim();
+    if (!fullName) {
+        alert('Please enter your full name.');
+        return;
+    }
+
+    const config = {
+        full_name: fullName,
+        role: document.getElementById('settingsRole').value.trim(),
+        signature: document.getElementById('settingsSignature').value.trim(),
+        use_signature: document.getElementById('settingsUseSig').checked,
+        shared_mailbox_name: document.getElementById('settingsSharedMailbox').value.trim()
+    };
+
+    try {
+        await fetch(`${API_URL}/api/user-config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        closeSettings();
+        showStatus('Settings saved!', 'success');
+    } catch (e) {
+        showStatus('Failed to save settings.', 'error');
+    }
+}
+
 
 function showStatus(message, type) {
     const bar = document.getElementById('statusBar');

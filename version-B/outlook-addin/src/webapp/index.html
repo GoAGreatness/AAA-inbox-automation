@@ -292,10 +292,15 @@
 
         <div class="header">
             <div class="header-icon">&#9993;</div>
-            <div>
+            <div style="flex:1;">
                 <h1>Email Response Generator</h1>
                 <p>AI-powered responses for your shared inbox</p>
             </div>
+            <button onclick="openSettings()" title="Settings"
+                style="background:none; border:1.5px solid #ddd; border-radius:8px; padding:8px 12px;
+                       cursor:pointer; font-size:16px; color:#666; width:auto; margin:0;">
+                &#9881;
+            </button>
         </div>
 
         <!-- Email Info -->
@@ -361,6 +366,53 @@
 
     </div>
 
+    <!-- Settings modal (accessible anytime via gear icon) -->
+    <div id="settingsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:480px; width:90%; margin:auto;">
+            <h2 style="color:#0078d4; margin:0 0 20px 0; font-size:18px;">Settings</h2>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Full Name *</label>
+            <input id="settingsName" type="text"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Role / Title</label>
+            <input id="settingsRole" type="text"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Email Signature</label>
+            <textarea id="settingsSignature"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:13px; min-height:80px; box-sizing:border-box; font-family:inherit;
+                       margin:6px 0 14px 0; resize:vertical;"></textarea>
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
+                <input id="settingsUseSig" type="checkbox" style="width:16px; height:16px;">
+                Always include signature in generated responses
+            </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Shared Mailbox Name</label>
+            <input id="settingsSharedMailbox" type="text" placeholder="e.g. Alberta AI Academy"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeSettings()"
+                    style="flex:1; padding:12px; background:#6c757d; color:white; border:none;
+                           border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Cancel
+                </button>
+                <button onclick="saveSettings()"
+                    style="flex:1; padding:12px; background:#0078d4; color:white; border:none;
+                           border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- First-run setup modal -->
     <div id="setupModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
          background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
@@ -390,10 +442,19 @@
                        font-size:13px; min-height:100px; box-sizing:border-box; font-family:inherit;
                        margin-bottom:14px; resize:vertical;"></textarea>
 
-            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:20px; cursor:pointer;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
                 <input id="setupUseSig" type="checkbox" checked style="width:16px; height:16px;">
                 Always include signature in generated responses
             </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Shared Mailbox Name (optional)</label>
+            <p style="font-size:12px; color:#888; margin:4px 0 6px 0;">
+                The display name of your shared inbox as it appears in Outlook's left panel.
+                Used to pull sent emails from the right mailbox for AI context.
+            </p>
+            <input id="setupSharedMailbox" type="text" placeholder="e.g. Alberta AI Academy"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
 
             <button onclick="saveSetup()"
                 style="width:100%; padding:12px; background:#0078d4; color:white; border:none;

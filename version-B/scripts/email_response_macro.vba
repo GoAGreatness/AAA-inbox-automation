@@ -129,8 +129,46 @@ Sub ImportSentEmails()
 
     On Error GoTo ImportError
 
-    ' Get Sent Items folder (5 = olFolderSentMail)
-    Set objFolder = Application.Session.GetDefaultFolder(5)
+    ' Fetch shared mailbox name from backend config
+    Dim strSharedMailbox As String
+    Dim objConfigHttp As Object
+    Set objConfigHttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+    objConfigHttp.Open "GET", "https://localhost:5000/api/user-config", False
+    objConfigHttp.Option(4) = 13056
+    objConfigHttp.Send
+    Dim configJson As String
+    configJson = objConfigHttp.ResponseText
+
+    ' Simple parse - extract shared_mailbox_name value from JSON
+    Dim nameStart As Long
+    nameStart = InStr(configJson, """shared_mailbox_name"":""")
+    If nameStart > 0 Then
+        nameStart = nameStart + Len("""shared_mailbox_name"":""")
+        Dim nameEnd As Long
+        nameEnd = InStr(nameStart, configJson, """")
+        strSharedMailbox = Mid(configJson, nameStart, nameEnd - nameStart)
+    End If
+
+    ' Try to find shared mailbox Sent Items if name is configured
+    Dim foundShared As Boolean
+    foundShared = False
+
+    If Len(strSharedMailbox) > 0 Then
+        Dim oStore As Object
+        For Each oStore In Application.Session.Stores
+            If InStr(LCase(oStore.DisplayName), LCase(strSharedMailbox)) > 0 Then
+                Set objFolder = oStore.GetDefaultFolder(5) ' 5 = olFolderSentMail
+                foundShared = True
+                Exit For
+            End If
+        Next
+    End If
+
+    ' Fallback to personal Sent Items if shared mailbox not found
+    If Not foundShared Then
+        Set objFolder = Application.Session.GetDefaultFolder(5)
+    End If
+
     Set objItems = objFolder.Items
     objItems.Sort "[SentOn]", True  ' Most recent first
 
