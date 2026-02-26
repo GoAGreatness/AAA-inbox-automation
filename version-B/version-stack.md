@@ -10,6 +10,7 @@
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
+9. **Annotation-Based Preference Learning** - Allow users to wrap inline notes within special punctuation (e.g. `[[like this]]`) inside their edited responses. Backend strips the annotations before sending, but stores them as user preferences/style expectations. AI consults these stored notes when generating future responses — capturing nuances like tone, late-reply acknowledgements, formality level, specific phrases to use/avoid, etc.
 
 ## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
 - [x] Trust SSL cert in machine store (via .z admin account)
