@@ -37,13 +37,13 @@ document.addEventListener('DOMContentLoaded', async function () {
             showSetupModal(subject, senderName, senderEmail, body);
             return;
         }
+
+        // Auto-generate only if user has enabled the setting
+        if (config.auto_generate && (subject || body)) {
+            generateResponse(subject, senderName, senderEmail, body);
+        }
     } catch (e) {
         console.warn('Could not check user config:', e);
-    }
-
-    // Auto-generate if email data was passed in
-    if (subject || body) {
-        generateResponse(subject, senderName, senderEmail, body);
     }
 });
 
@@ -78,7 +78,8 @@ async function saveSetup() {
         role: document.getElementById('setupRole').value.trim(),
         signature: document.getElementById('setupSignature').value.trim(),
         use_signature: document.getElementById('setupUseSig').checked,
-        shared_mailbox_name: document.getElementById('setupSharedMailbox').value.trim()
+        shared_mailbox_name: document.getElementById('setupSharedMailbox').value.trim(),
+        auto_generate: document.getElementById('setupAutoGenerate').checked
     };
 
     try {
@@ -270,6 +271,7 @@ async function openSettings() {
         document.getElementById('settingsSignature').value = config.signature || '';
         document.getElementById('settingsUseSig').checked = config.use_signature !== false;
         document.getElementById('settingsSharedMailbox').value = config.shared_mailbox_name || '';
+        document.getElementById('settingsAutoGenerate').checked = config.auto_generate === 1 || config.auto_generate === true;
     } catch (e) {
         console.error('Could not load settings:', e);
     }
@@ -296,7 +298,8 @@ async function saveSettings() {
         role: document.getElementById('settingsRole').value.trim(),
         signature: document.getElementById('settingsSignature').value.trim(),
         use_signature: document.getElementById('settingsUseSig').checked,
-        shared_mailbox_name: document.getElementById('settingsSharedMailbox').value.trim()
+        shared_mailbox_name: document.getElementById('settingsSharedMailbox').value.trim(),
+        auto_generate: document.getElementById('settingsAutoGenerate').checked
     };
 
     try {

@@ -396,7 +396,12 @@
             <label style="font-size:13px; font-weight:600; color:#333;">Shared Mailbox Name</label>
             <input id="settingsSharedMailbox" type="text" placeholder="e.g. Alberta AI Academy"
                 style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
-                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:20px; cursor:pointer;">
+                <input id="settingsAutoGenerate" type="checkbox" style="width:16px; height:16px;">
+                Auto-generate response when app opens
+            </label>
 
             <div style="display:flex; gap:10px;">
                 <button onclick="closeSettings()"
@@ -454,7 +459,12 @@
             </p>
             <input id="setupSharedMailbox" type="text" placeholder="e.g. Alberta AI Academy"
                 style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
-                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:20px; cursor:pointer;">
+                <input id="setupAutoGenerate" type="checkbox" style="width:16px; height:16px;">
+                Auto-generate response when app opens
+            </label>
 
             <button onclick="saveSetup()"
                 style="width:100%; padding:12px; background:#0078d4; color:white; border:none;
