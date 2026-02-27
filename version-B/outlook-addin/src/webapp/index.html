@@ -418,6 +418,21 @@
         </div>
     </div>
 
+    <!-- Import reminder modal -->
+    <div id="importReminderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:420px; width:90%; margin:auto; text-align:center;">
+            <div style="font-size:32px; margin-bottom:12px;">📥</div>
+            <h3 style="margin:0 0 12px 0; font-size:17px; color:#1a1a2e;">Import Sent Emails</h3>
+            <p id="importReminderMsg" style="font-size:14px; color:#555; line-height:1.6; margin:0 0 20px 0;"></p>
+            <button onclick="closeImportReminder()"
+                style="background:#4f46e5; color:white; border:none; border-radius:8px;
+                       padding:10px 24px; font-size:14px; font-weight:600; cursor:pointer;">
+                Got it
+            </button>
+        </div>
+    </div>
+
     <!-- First-run setup modal -->
     <div id="setupModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
          background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
