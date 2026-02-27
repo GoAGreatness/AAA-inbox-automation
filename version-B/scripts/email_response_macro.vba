@@ -9,31 +9,20 @@
 '   5. Press Ctrl+S to save
 '   6. Close the VBA editor
 '
-' HOW TO ADD GENERATE BUTTON TO TOOLBAR:
+' HOW TO ADD BUTTONS TO TOOLBAR:
 '   1. Right-click the Quick Access Toolbar (top-left of Outlook)
 '   2. Click "Customize Quick Access Toolbar"
 '   3. Under "Choose commands from", select "Macros"
-'   4. Find "Project.ThisOutlookSession.GenerateEmailResponse"
-'   5. Click Add >> then OK
+'   4. Add "Project.ThisOutlookSession.GenerateEmailResponse"
+'   5. Add "Project.ThisOutlookSession.ImportSentEmails"
+'   6. Click OK
 '
 ' HOW TO USE:
-'   1. Click on any email in Outlook (reading pane or shared inbox)
-'   2. Click the macro button in the Quick Access Toolbar
-'   3. Chrome opens with the email pre-loaded and response generating
-'   4. Copy the response, paste into your Outlook reply
-'
-' SENT EMAILS IMPORT:
-'   Runs automatically on Outlook startup (Application_Startup event).
-'   Silently syncs your last 150 sent emails to the AI knowledge base.
+'   1. Click "Import Sent Emails" button first (first time, and periodically)
+'   2. Click on any email in Outlook (reading pane or shared inbox)
+'   3. Click "Generate Response" button - Chrome opens with the email pre-loaded
+'   4. Generate, copy the response, paste into your Outlook reply
 ' ============================================================
-
-
-' ------------------------------------------------------------
-' Auto-runs on Outlook startup - silently imports sent emails
-' ------------------------------------------------------------
-Private Sub Application_Startup()
-    ImportSentEmails
-End Sub
 
 
 ' ------------------------------------------------------------
@@ -99,9 +88,6 @@ Sub GenerateEmailResponse()
              "&sender_email=" & URLEncode(strSenderEmail) & _
              "&body=" & URLEncode(strBody)
 
-    ' Silently sync sent emails to knowledge base before opening Chrome
-    ImportSentEmails
-
     ' Open Chrome
     Set objShell = CreateObject("WScript.Shell")
     objShell.Run "cmd /c start chrome """ & strURL & """", 0, False
@@ -110,9 +96,10 @@ End Sub
 
 
 ' ------------------------------------------------------------
-' Import last 150 sent emails into AI knowledge base (ChromaDB)
-' Called automatically on startup via Application_Startup
-' Uses MD5-based IDs on backend so duplicates are safe to send
+' Import last 50 sent emails into AI knowledge base (ChromaDB)
+' Triggered manually via Quick Access Toolbar button.
+' Uses MD5-based IDs on backend so duplicates are safe to send.
+' Run this at least once before first use, then periodically.
 ' ------------------------------------------------------------
 Sub ImportSentEmails()
 
@@ -211,10 +198,11 @@ Sub ImportSentEmails()
     objHttp.Option(4) = 13056  ' Ignore SSL errors (self-signed cert)
     objHttp.Send jsonBody
 
+    MsgBox count & " sent emails imported into AI knowledge base.", vbInformation, "Import Complete"
     Exit Sub
 
 ImportError:
-    ' Silent fail - import is best-effort, don't block Chrome from opening
+    MsgBox "Import failed. Make sure the backend server is running on port 5000.", vbExclamation, "Import Error"
     Exit Sub
 
 End Sub

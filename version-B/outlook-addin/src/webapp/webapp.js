@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (config.auto_generate && (subject || body)) {
             generateResponse(subject, senderName, senderEmail, body);
         }
+
+        // Show import reminder immediately if vector store is empty
+        checkImportReminder();
     } catch (e) {
         console.warn('Could not check user config:', e);
     }
@@ -173,6 +176,9 @@ async function generateResponse(subject, senderName, senderEmail, body) {
 
         document.getElementById('responseSection').classList.add('visible');
         showStatus('Response generated! Edit if needed, then copy.', 'success');
+
+        // Check if we should remind the user to re-import sent emails
+        checkImportReminder();
 
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -313,6 +319,47 @@ async function saveSettings() {
     } catch (e) {
         showStatus('Failed to save settings.', 'error');
     }
+}
+
+
+/**
+ * Check stats and show import reminder if needed:
+ * - Immediately if vector store is empty (first-time user)
+ * - Every 10 generations thereafter
+ */
+async function checkImportReminder() {
+    try {
+        const res = await fetch(`${API_URL}/api/stats`);
+        const stats = await res.json();
+
+        const total = stats.total_generated || 0;
+        const vectorCount = stats.vector_store_count || 0;
+
+        if (vectorCount === 0) {
+            showImportReminder(true);
+        } else if (total > 0 && total % 10 === 0) {
+            showImportReminder(false);
+        }
+    } catch (e) {
+        console.warn('Could not check stats for import reminder:', e);
+    }
+}
+
+function showImportReminder(isFirstTime) {
+    const modal = document.getElementById('importReminderModal');
+    const msg = document.getElementById('importReminderMsg');
+
+    if (isFirstTime) {
+        msg.textContent = "You haven't imported your sent emails yet. Click the \"Import Sent Emails\" button in your Outlook toolbar to give the AI context from your past replies.";
+    } else {
+        msg.textContent = "You've generated 10 more responses. Consider clicking \"Import Sent Emails\" in your Outlook toolbar to keep the AI up to date with your latest sent emails.";
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeImportReminder() {
+    document.getElementById('importReminderModal').style.display = 'none';
 }
 
 
