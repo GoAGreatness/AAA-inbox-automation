@@ -42,9 +42,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (config.auto_generate && (subject || body)) {
             generateResponse(subject, senderName, senderEmail, body);
         }
-
-        // Show import reminder immediately if vector store is empty
-        checkImportReminder();
     } catch (e) {
         console.warn('Could not check user config:', e);
     }
@@ -95,18 +92,9 @@ async function saveSetup() {
         console.error('Failed to save config:', e);
     }
 
-    // Hide modal and proceed with generation
-    const modal = document.getElementById('setupModal');
-    modal.style.display = 'none';
-
-    const subject = modal.dataset.subject;
-    const senderName = modal.dataset.senderName;
-    const senderEmail = modal.dataset.senderEmail;
-    const body = modal.dataset.body;
-
-    if (subject || body) {
-        generateResponse(subject, senderName, senderEmail, body);
-    }
+    // Hide setup modal and always show the import reminder for first-time users
+    document.getElementById('setupModal').style.display = 'none';
+    showImportReminder(true);
 }
 
 /**
@@ -323,9 +311,9 @@ async function saveSettings() {
 
 
 /**
- * Check stats and show import reminder if needed:
- * - Immediately if vector store is empty (first-time user)
- * - Every 10 generations thereafter
+ * Post-generation reminder checks:
+ * - If vector store is still empty after generating, show first-time call-to-action
+ * - Every 10 generations, show a periodic nudge
  */
 async function checkImportReminder() {
     try {
@@ -350,7 +338,7 @@ function showImportReminder(isFirstTime) {
     const msg = document.getElementById('importReminderMsg');
 
     if (isFirstTime) {
-        msg.textContent = "You haven't imported your sent emails yet. Click the \"Import Sent Emails\" button in your Outlook toolbar to give the AI context from your past replies.";
+        msg.textContent = "Don't forget to import your sent emails! Click the \"Import Sent Emails\" button in your Outlook toolbar so the AI can learn from your past replies.";
     } else {
         msg.textContent = "You've generated 10 more responses. Consider clicking \"Import Sent Emails\" in your Outlook toolbar to keep the AI up to date with your latest sent emails.";
     }
