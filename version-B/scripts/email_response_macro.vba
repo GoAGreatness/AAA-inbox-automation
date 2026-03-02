@@ -191,14 +191,26 @@ Sub ImportSentEmails()
     emailsJson = emailsJson & "]"
     jsonBody = "{""emails"":" & emailsJson & "}"
 
-    ' POST to backend - sync with small payload (50 emails x 500 chars)
-    Set objHttp = CreateObject("WinHttp.WinHttpRequest.5.1")
-    objHttp.Open "POST", "https://localhost:5000/api/import-sent", False
-    objHttp.SetRequestHeader "Content-Type", "application/json"
-    objHttp.Option(4) = 13056  ' Ignore SSL errors (self-signed cert)
-    objHttp.Send jsonBody
+    ' Write JSON payload to temp file
+    Dim tempFile As String
+    tempFile = Environ("TEMP") & "\aaa_import_payload.json"
 
-    MsgBox count & " sent emails imported into AI knowledge base.", vbInformation, "Import Complete"
+    Dim fileNum As Integer
+    fileNum = FreeFile
+    Open tempFile For Output As #fileNum
+    Print #fileNum, jsonBody
+    Close #fileNum
+
+    ' Find the PowerShell script (same folder as this macro's scripts)
+    Dim psScript As String
+    psScript = Environ("USERPROFILE") & "\Desktop\projects\AAA-inbox-automation\version-B\scripts\import_sent.ps1"
+
+    ' Launch PowerShell in background - hands off immediately, no freeze
+    Dim objShell As Object
+    Set objShell = CreateObject("WScript.Shell")
+    objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & psScript & """ -PayloadFile """ & tempFile & """", 0, False
+
+    MsgBox count & " sent emails queued for import. Running in background.", vbInformation, "Import Started"
     Exit Sub
 
 ImportError:
