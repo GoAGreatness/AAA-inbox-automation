@@ -61,7 +61,8 @@ def generate_response():
             'response_id': response_id,
             'generated_response': result['generated_response'],
             'model': result['model'],
-            'generation_time_ms': result['generation_time_ms']
+            'generation_time_ms': result['generation_time_ms'],
+            'similar_emails_used': result.get('similar_emails_used', 0)
         }
     except Exception as e:
         # Fallback if Ollama is not running
