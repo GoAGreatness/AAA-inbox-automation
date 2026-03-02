@@ -6,7 +6,7 @@
 2. **Shared Mailbox** - ✅ Fixed - VBA macro reads shared mailbox emails correctly (tested 2026-02-24)
 3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
 4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
-5. **Sent Email Import** - ✅ Complete - Import is a standalone VBA button (decoupled from Generate). First-run setup shows import reminder before generating. Post-generate reminder fires every 10 generations. RAG badge fixed (similar_emails_used now passed through from backend). Known issue: slight Outlook freeze during import (performance improvement deferred).
+5. **Sent Email Import** - ✅ Complete - Import is a standalone VBA button (decoupled from Generate). VBA hands off to background PowerShell script (import_sent.ps1) — no Outlook freeze. Windows toast notification confirms completion. First-run setup shows import reminder before generating. Post-generate reminder fires every 10 generations. RAG badge working.
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
