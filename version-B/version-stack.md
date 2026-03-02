@@ -7,6 +7,7 @@
 3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
 4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
 5. **Sent Email Import** - ✅ Improved - Import is now a standalone VBA button (decoupled from Generate). Web app shows reminder popup for first-time users (empty vector store) and every 10 generations. Known issue: slight Outlook freeze during import (performance improvement deferred).
+   - **TODO**: First-run setup flow needs verification — "Finish Setup" button and import reminder sequencing not yet confirmed working (Chrome cache may have masked test results). Re-test with Ctrl+Shift+R.
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
