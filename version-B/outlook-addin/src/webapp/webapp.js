@@ -188,12 +188,24 @@ async function generateResponse(subject, senderName, senderEmail, body) {
  * Copy response to clipboard and send feedback
  */
 async function copyResponse() {
-    const responseText = document.getElementById('response').value;
+    const rawText = document.getElementById('response').value;
 
-    if (!responseText) {
+    if (!rawText) {
         showStatus('No response to copy.', 'error');
         return;
     }
+
+    // Extract [[annotations]] and strip them from the copied text
+    const annotationRegex = /\[\[(.+?)\]\]/g;
+    const annotations = [];
+    let match;
+    while ((match = annotationRegex.exec(rawText)) !== null) {
+        annotations.push(match[1].trim());
+    }
+    const responseText = rawText.replace(annotationRegex, '').replace(/\n{3,}/g, '\n\n').trim();
+
+    // Update the textarea with the cleaned text
+    document.getElementById('response').value = responseText;
 
     try {
         await navigator.clipboard.writeText(responseText);
@@ -212,8 +224,8 @@ async function copyResponse() {
         btn.classList.remove('copied');
     }, 3000);
 
-    // Send feedback (fire and forget)
-    sendFeedback();
+    // Send feedback (fire and forget), passing any extracted annotations
+    sendFeedback(annotations);
 }
 
 /**
@@ -233,7 +245,7 @@ function rateResponse(rating) {
 /**
  * Send feedback to backend
  */
-function sendFeedback() {
+function sendFeedback(annotations = []) {
     if (!currentResponseId) return;
 
     const finalResponse = document.getElementById('response').value;
@@ -247,7 +259,8 @@ function sendFeedback() {
             final_response: finalResponse,
             was_edited: wasEdited,
             user_rating: currentRating || null,
-            edit_notes: wasEdited ? 'User edited response' : ''
+            edit_notes: wasEdited ? 'User edited response' : '',
+            annotations: annotations
         })
     }).catch(err => console.error('Feedback error:', err));
 }

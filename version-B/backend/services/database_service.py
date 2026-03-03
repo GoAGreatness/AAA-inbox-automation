@@ -81,6 +81,16 @@ def init_database():
         )
     ''')
 
+    # User preferences table - stores annotations extracted from edited responses
+    # e.g. [[always apologize for late replies]] → stored as a preference note
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note TEXT UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     # User config table - stores user identity for AI context
     # Single row (id=1) updated in place
     cursor.execute('''
@@ -235,6 +245,30 @@ def save_user_config(full_name, role, signature, use_signature, shared_mailbox_n
     ''', (full_name, role, signature, use_signature, shared_mailbox_name, auto_generate))
     conn.commit()
     conn.close()
+
+
+def save_user_preferences(notes):
+    """Save a list of annotation notes. Ignores duplicates (UNIQUE constraint)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    for note in notes:
+        note = note.strip()
+        if note:
+            cursor.execute(
+                'INSERT OR IGNORE INTO user_preferences (note) VALUES (?)', (note,)
+            )
+    conn.commit()
+    conn.close()
+
+
+def get_user_preferences():
+    """Get all stored user preference notes."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT note FROM user_preferences ORDER BY created_at ASC')
+    rows = cursor.fetchall()
+    conn.close()
+    return [row['note'] for row in rows]
 
 
 def get_sent_emails(limit=50):

@@ -9,7 +9,7 @@ import os
 from services.vector_service import find_similar_emails
 
 
-def generate_email_response(subject, sender_name, sender_email, body, user_config=None):
+def generate_email_response(subject, sender_name, sender_email, body, user_config=None, user_preferences=None):
     """
     Send email data to Ollama and get an AI-generated response.
     Searches for similar past emails to use as context.
@@ -43,8 +43,15 @@ def generate_email_response(subject, sender_name, sender_email, body, user_confi
     else:
         signature_instruction = "8. Do NOT include any signature or sign-off at the end"
 
-    prompt = f"""You are a professional email assistant. {identity}
+    # Build user preferences section
+    if user_preferences:
+        prefs_text = "\n".join(f"- {p}" for p in user_preferences)
+        preferences_section = f"\nUser style preferences (always follow these):\n{prefs_text}\n"
+    else:
+        preferences_section = ""
 
+    prompt = f"""You are a professional email assistant. {identity}
+{preferences_section}
 {context}
 
 Write a professional, helpful response to this email IN FIRST PERSON (as yourself, not as an assistant):
