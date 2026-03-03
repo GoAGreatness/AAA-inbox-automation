@@ -29,10 +29,12 @@ TEACHING APPROACH
 TASK WORKFLOW
 -------------
 - Follow stages defined in version-stack.md
-- Update version-stack.md as tasks are completed (check boxes, mark stages done)
+- Update version-stack.md as tasks are completed (check boxes, mark stages done) — no need to wait for permission
 - Update MEMORY.md (in .claude folder) with progress at end of sessions
 - Before switching machines or ending session: remind user to commit and push
 - When completing a stage, give a short summary of what was achieved
+- REASON BEFORE IMPLEMENTING: for any non-trivial change, explain the approach and wait for user go-ahead before writing code (user may want to commit/push first)
+- Exception to above: version-stack.md and preference doc updates can be done freely without waiting
 
 TESTING
 -------
