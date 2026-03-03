@@ -12,7 +12,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Initialize database on startup
-from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config
+from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config, save_user_preferences, get_user_preferences
 from services.vector_service import add_sent_email, get_collection_count
 init_database()
 
@@ -52,7 +52,8 @@ def generate_response():
         email_id = store_email(sender_email, sender_name, subject, body)
 
         user_config = get_user_config()
-        result = generate_email_response(subject, sender_name, sender_email, body, user_config)
+        user_preferences = get_user_preferences()
+        result = generate_email_response(subject, sender_name, sender_email, body, user_config, user_preferences)
 
         # Store the generated response in database
         response_id = store_response(email_id, result['generated_response'], result['model'], result['generation_time_ms'])
@@ -90,9 +91,14 @@ def store_feedback():
     was_edited = data.get('was_edited', False)
     user_rating = data.get('user_rating')
     edit_notes = data.get('edit_notes', '')
+    annotations = data.get('annotations', [])
 
     # Store feedback in database
     db_store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
+
+    # Save any [[annotation]] notes extracted by the frontend
+    if annotations:
+        save_user_preferences(annotations)
 
     # Auto-learn: add approved response to vector store
     # This means future queries will find this response as a similar example
