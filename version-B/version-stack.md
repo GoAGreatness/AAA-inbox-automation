@@ -12,7 +12,7 @@
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
-9. **Annotation-Based Preference Learning** - ✅ Complete - Users add `[[notes]]` in edited responses. Frontend extracts + strips them before copying. Annotations sent to backend, stored in `user_preferences` table (deduped). AI prompt includes all stored preferences on every generation.
+9. **Annotation-Based Preference Learning** - ✅ Complete - Future: allow user to view and edit stored preference notes in the Settings modal. - Users add `[[notes]]` in edited responses. Frontend extracts + strips them before copying. Annotations sent to backend, stored in `user_preferences` table (deduped). AI prompt includes all stored preferences on every generation.
 10. **User Documentation Page** - Static page (with dropdowns/accordions) explaining all add-in features and how to use them. Linked from the web app footer. (SWE term: User Guide / Product Docs)
 
 ## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
