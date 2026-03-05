@@ -138,7 +138,8 @@ def save_config():
         signature=data.get('signature', ''),
         use_signature=data.get('use_signature', True),
         shared_mailbox_name=data.get('shared_mailbox_name', ''),
-        auto_generate=data.get('auto_generate', False)
+        auto_generate=data.get('auto_generate', False),
+        ai_provider=data.get('ai_provider', 'ollama')
     )
     return jsonify({'success': True, 'message': 'Configuration saved'})
 

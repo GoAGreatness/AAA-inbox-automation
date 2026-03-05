@@ -1,0 +1,80 @@
+--------------------Python Example Code--------------------------------
+import requests
+import json
+
+MODEL_ENDPOINT = "https://gpt-oss-120b-predictor-zoran-mijajlovi-c13bee97.ingress.pcai.int.gov.ab.ca"
+API_PATH = "/v1/chat/completions"
+AUTH_TOKEN = "PLACEHOLDER_AUTH_TOKEN"
+BODY_DATA = {
+    "model": "openai/gpt-oss-120b",
+    "messages": [
+        { "role": "system", "content": "You are a software engineer" },
+        { "role": "user", "content": "How far is the moon from earth" }
+    ],
+    "max_tokens": 1024
+}
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {AUTH_TOKEN}",
+}
+
+response = requests.post(f"{MODEL_ENDPOINT}{API_PATH}", headers=headers, data=json.dumps(BODY_DATA), verify=False)
+
+print(response.text)
+--------------------------------------------
+
+--------------NODE EXAMPLE-------------------
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+const MODEL_ENDPOINT = "https://gpt-oss-120b-predictor-zoran-mijajlovi-c13bee97.ingress.pcai.int.gov.ab.ca";
+const API_PATH = "/v1/chat/completions";
+const AUTH_TOKEN = "PLACEHOLDER_AUTH_TOKEN";
+const BODY_DATA = {
+    "model": "openai/gpt-oss-120b",
+    "messages": [
+        { "role": "system", "content": "You are a software engineer" },
+        { "role": "user", "content": "How far is the moon from earth" }
+    ],
+    "max_tokens": 1024
+};
+
+async function chatCompletions() {
+    const response = await fetch(`${MODEL_ENDPOINT}${API_PATH}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${AUTH_TOKEN}`,
+        },
+        body: JSON.stringify(BODY_DATA),
+    });
+
+    const data = await response.json();
+
+    console.log(JSON.stringify(data, null, 4));
+}
+chatCompletions();
+
+-----------------------------------
+
+-----------SHELL EXAMPLE---------------
+
+#!/bin/bash
+
+MODEL_ENDPOINT="https://gpt-oss-120b-predictor-zoran-mijajlovi-c13bee97.ingress.pcai.int.gov.ab.ca"
+API_PATH="/v1/chat/completions"
+AUTH_TOKEN="PLACEHOLDER_AUTH_TOKEN"
+
+RESPONSE=$(curl -s -k -X POST "$MODEL_ENDPOINT$API_PATH"     -H "Content-Type: application/json"     -H "Authorization: Bearer $AUTH_TOKEN"     -d '{
+    "model": "openai/gpt-oss-120b",
+    "messages": [
+        { "role": "system", "content": "You are a software engineer" },
+        { "role": "user", "content": "How far is the moon from earth" }
+    ],
+    "max_tokens": 1024
+}')
+
+echo $RESPONSE
+
+-----------------------------------

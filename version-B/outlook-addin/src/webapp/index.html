@@ -401,10 +401,18 @@
                 style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
                        font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
 
-            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:20px; cursor:pointer;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
                 <input id="settingsAutoGenerate" type="checkbox" style="width:16px; height:16px;">
                 Auto-generate response when app opens
             </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">AI Model</label>
+            <select id="settingsAiProvider"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
+                <option value="ollama">Ollama (Local)</option>
+                <option value="goa">GoA LLM Cluster</option>
+            </select>
 
             <div style="display:flex; gap:10px;">
                 <button onclick="closeSettings()"
@@ -479,10 +487,18 @@
                 style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
                        font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
 
-            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:20px; cursor:pointer;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
                 <input id="setupAutoGenerate" type="checkbox" style="width:16px; height:16px;">
                 Auto-generate response when app opens
             </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">AI Model</label>
+            <select id="setupAiProvider"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
+                <option value="ollama">Ollama (Local)</option>
+                <option value="goa">GoA LLM Cluster</option>
+            </select>
 
             <button onclick="saveSetup()"
                 style="width:100%; padding:12px; background:#0078d4; color:white; border:none;

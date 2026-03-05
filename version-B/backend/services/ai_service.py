@@ -1,9 +1,10 @@
 """
-AI Service - Handles communication with Ollama for response generation.
+AI Service - Handles communication with Ollama or GoA LLM cluster.
 Uses RAG (Retrieval Augmented Generation) to find similar past emails
 and feed them as context to improve response quality.
 """
 import ollama
+import requests
 import time
 import os
 from services.vector_service import find_similar_emails
@@ -11,12 +12,13 @@ from services.vector_service import find_similar_emails
 
 def generate_email_response(subject, sender_name, sender_email, body, user_config=None, user_preferences=None):
     """
-    Send email data to Ollama and get an AI-generated response.
-    Searches for similar past emails to use as context.
-    Uses user_config (name, role, signature) to personalise the response.
-    Returns dict with generated response and metadata.
+    Generate an AI response using either Ollama (local) or GoA LLM cluster.
+    Provider is determined by the AI_PROVIDER env variable or user config.
     """
-    model = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
+    # Determine provider — user config takes priority over env var
+    provider = os.getenv('AI_PROVIDER', 'ollama')
+    if user_config and user_config.get('ai_provider'):
+        provider = user_config['ai_provider']
 
     # RAG: Find similar past emails for context
     similar = find_similar_emails(subject, body)
@@ -74,19 +76,60 @@ Response:"""
 
     start_time = time.time()
 
-    result = ollama.chat(
-        model=model,
-        messages=[{'role': 'user', 'content': prompt}]
-    )
+    if provider == 'goa':
+        response_text, model_name = _call_goa(prompt)
+    else:
+        response_text, model_name = _call_ollama(prompt)
 
     generation_time = int((time.time() - start_time) * 1000)
 
     return {
-        'generated_response': result['message']['content'],
-        'model': model,
+        'generated_response': response_text,
+        'model': model_name,
         'generation_time_ms': generation_time,
         'similar_emails_used': len(similar)
     }
+
+
+def _call_ollama(prompt):
+    """Call local Ollama model."""
+    model = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
+    result = ollama.chat(
+        model=model,
+        messages=[{'role': 'user', 'content': prompt}]
+    )
+    return result['message']['content'], model
+
+
+def _call_goa(prompt):
+    """Call GoA LLM cluster via OpenAI-compatible API."""
+    endpoint = os.getenv('GOA_MODEL_ENDPOINT', '')
+    api_path = os.getenv('GOA_API_PATH', '/v1/chat/completions')
+    model = os.getenv('GOA_MODEL', 'openai/gpt-oss-120b')
+    api_key = os.getenv('GOA_API_KEY', '')
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+
+    body = {
+        'model': model,
+        'messages': [{'role': 'user', 'content': prompt}],
+        'max_tokens': 1024
+    }
+
+    # TODO: Replace verify=False once GoA CA certificate is obtained and trusted
+    response = requests.post(
+        f"{endpoint}{api_path}",
+        headers=headers,
+        json=body,
+        verify=False,
+        timeout=60
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data['choices'][0]['message']['content'], model
 
 
 def _build_context(similar_emails):

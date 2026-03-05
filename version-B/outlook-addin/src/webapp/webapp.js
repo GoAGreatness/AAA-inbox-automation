@@ -79,7 +79,8 @@ async function saveSetup() {
         signature: document.getElementById('setupSignature').value.trim(),
         use_signature: document.getElementById('setupUseSig').checked,
         shared_mailbox_name: document.getElementById('setupSharedMailbox').value.trim(),
-        auto_generate: document.getElementById('setupAutoGenerate').checked
+        auto_generate: document.getElementById('setupAutoGenerate').checked,
+        ai_provider: document.getElementById('setupAiProvider').value
     };
 
     try {
@@ -279,6 +280,7 @@ async function openSettings() {
         document.getElementById('settingsUseSig').checked = config.use_signature !== false;
         document.getElementById('settingsSharedMailbox').value = config.shared_mailbox_name || '';
         document.getElementById('settingsAutoGenerate').checked = config.auto_generate === 1 || config.auto_generate === true;
+        document.getElementById('settingsAiProvider').value = config.ai_provider || 'ollama';
     } catch (e) {
         console.error('Could not load settings:', e);
     }
@@ -306,7 +308,8 @@ async function saveSettings() {
         signature: document.getElementById('settingsSignature').value.trim(),
         use_signature: document.getElementById('settingsUseSig').checked,
         shared_mailbox_name: document.getElementById('settingsSharedMailbox').value.trim(),
-        auto_generate: document.getElementById('settingsAutoGenerate').checked
+        auto_generate: document.getElementById('settingsAutoGenerate').checked,
+        ai_provider: document.getElementById('settingsAiProvider').value
     };
 
     try {

@@ -102,6 +102,7 @@ def init_database():
             use_signature BOOLEAN DEFAULT 1,
             shared_mailbox_name TEXT,
             auto_generate BOOLEAN DEFAULT 0,
+            ai_provider TEXT DEFAULT 'ollama',
             configured_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -227,13 +228,13 @@ def get_user_config():
     return dict(row) if row else None
 
 
-def save_user_config(full_name, role, signature, use_signature, shared_mailbox_name='', auto_generate=False):
+def save_user_config(full_name, role, signature, use_signature, shared_mailbox_name='', auto_generate=False, ai_provider='ollama'):
     """Save or update user config (upsert - insert or replace)."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO user_config (id, full_name, role, signature, use_signature, shared_mailbox_name, auto_generate, configured_at)
-        VALUES (1, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO user_config (id, full_name, role, signature, use_signature, shared_mailbox_name, auto_generate, ai_provider, configured_at)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(id) DO UPDATE SET
             full_name=excluded.full_name,
             role=excluded.role,
@@ -241,8 +242,9 @@ def save_user_config(full_name, role, signature, use_signature, shared_mailbox_n
             use_signature=excluded.use_signature,
             shared_mailbox_name=excluded.shared_mailbox_name,
             auto_generate=excluded.auto_generate,
+            ai_provider=excluded.ai_provider,
             configured_at=excluded.configured_at
-    ''', (full_name, role, signature, use_signature, shared_mailbox_name, auto_generate))
+    ''', (full_name, role, signature, use_signature, shared_mailbox_name, auto_generate, ai_provider))
     conn.commit()
     conn.close()
 
