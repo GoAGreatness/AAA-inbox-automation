@@ -7,7 +7,10 @@
 3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
    - **Bug**: "Always include signature" checkbox unchecking does not persist — `use_signature` not saving correctly. Fix in dedicated branch.
    - **Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing. Only the annotation text should be removed, formatting should be preserved. Fix in dedicated branch.
-4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
+4. **AI Provider Options** - ✅ Complete - GoA LLM cluster integrated alongside Ollama. User selects provider in Settings modal + first-run setup. Provider stored in user config, passed to ai_service.py which branches between _call_ollama() and _call_goa(). GoA uses OpenAI-compatible API. Tested: 1.5s generation time.
+   - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
+   - **TODO**: Per-model annotation preferences (currently global — both models use all annotations, which is correct default). Future: allow user to configure per-model in Settings.
+   - **TODO**: Clearing user profile should cascade to user_preferences and all associated metadata. Deferred until sessions/profiles are properly implemented.
 5. **Sent Email Import** - ✅ Complete - Import is a standalone VBA button (decoupled from Generate). VBA hands off to background PowerShell script (import_sent.ps1) — no Outlook freeze. Windows toast notification confirms completion. First-run setup shows import reminder before generating. Post-generate reminder fires every 10 generations. RAG badge working.
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.

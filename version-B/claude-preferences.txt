@@ -66,6 +66,12 @@ GENERAL
   - Exception: Don't prompt commits for standalone version-stack.md or preference doc updates
   - Only skip if no other files were changed alongside them
 
+BOUNDARIES
+----------
+- NEVER read or write the .env file under any circumstances — treat it as off-limits
+- User will manage .env directly; Claude only guides what values to add/change via instructions
+- User will grant explicit permission if an exception is ever needed
+
 DATA SECURITY
 -------------
 - NEVER allow sensitive data (emails, user data, organizational info) to be committed to git
