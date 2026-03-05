@@ -27,12 +27,15 @@ try {
     $payload = $jsonBody | ConvertFrom-Json
     $count = $payload.emails.Count
 
+    # Encode body as UTF-8 bytes to avoid BOM/encoding issues
+    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
+
     # POST to backend (no -SkipCertificateCheck - cert should be trusted in machine store)
     Invoke-RestMethod `
         -Uri $apiUrl `
         -Method POST `
-        -ContentType "application/json" `
-        -Body $jsonBody | Out-Null
+        -ContentType "application/json; charset=utf-8" `
+        -Body $bodyBytes | Out-Null
 
     Show-ToastNotification "Import Complete" "$count sent emails imported into AI knowledge base."
 

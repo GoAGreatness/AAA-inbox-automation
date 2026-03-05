@@ -151,7 +151,9 @@ def import_sent_emails():
     Uses MD5 hash of subject+body as ID to prevent duplicate imports.
     """
     import hashlib
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify({'error': 'Invalid JSON payload'}), 400
     emails = data.get('emails', [])
 
     imported = 0

@@ -44,7 +44,7 @@ def add_sent_email(email_id, subject, original_body, reply_body):
     )
 
 
-def find_similar_emails(subject, body, n_results=3):
+def find_similar_emails(subject, body, n_results=12):
     """
     Find similar past emails using semantic search.
     Returns the most similar sent emails based on meaning.
