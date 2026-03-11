@@ -5,7 +5,7 @@
 1. **AI Context** - ✅ Fixed - model now replies as the logged-in user (first person, with signature)
 2. **Shared Mailbox** - ✅ Fixed - VBA macro reads shared mailbox emails correctly (tested 2026-02-24)
 3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
-   - **TODO**: Dynamic RAG context depth — currently fixed at 12. Future: let the model determine how many similar emails it needs within a range of 7–15 based on query complexity.
+   - **TODO**: Dynamic RAG context depth — currently fixed at 15 (bumped from 12, 2026-03-11). Future: LLM-driven selection — pre-prompt asks model to assess email complexity and return a count, then that count drives `find_similar_emails()`. Planned for branch `version-b-dev--feature--information-processing`.
    - **Bug**: "Always include signature" checkbox unchecking does not persist — `use_signature` not saving correctly. Fix in dedicated branch.
    - **Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing. Only the annotation text should be removed, formatting should be preserved. Fix in dedicated branch.
 4. **AI Provider Options** - ✅ Complete - GoA LLM cluster integrated alongside Ollama. User selects provider in Settings modal + first-run setup. Provider stored in user config, passed to ai_service.py which branches between _call_ollama() and _call_goa(). GoA uses OpenAI-compatible API. Tested: 1.5s generation time.
@@ -1029,6 +1029,14 @@ certutil -addstore -user Root backend/data/ssl/cert.pem
 
 ---
 
-**Last Updated**: 2026-02-10
+---
+
+## Data Store Cleanup (2026-03-11)
+- SQLite `sent_emails` table renamed to `sent_emails_legacy` — superseded by ChromaDB. Not actively written to or read from.
+- `historical_emails` stat now reads from ChromaDB collection count (was reading empty SQLite table).
+- `scripts/check_sent_emails.py` updated to query ChromaDB directly — lists all emails individually with drill-down by index or ID.
+- `find_similar_emails()` default bumped to `n_results=15`.
+
+**Last Updated**: 2026-03-11
 **Version**: 1.0
 **Route**: B (Outlook Web Add-in with Local Backend)
