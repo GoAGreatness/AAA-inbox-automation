@@ -58,9 +58,10 @@ def init_database():
         )
     ''')
 
-    # Sent emails table - stores historical sent replies for RAG context
+    # Legacy sent emails table - superseded by ChromaDB vector store (sent_emails collection)
+    # Kept for potential future use; not actively written to or read from
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS sent_emails (
+        CREATE TABLE IF NOT EXISTS sent_emails_legacy (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sender_email TEXT,
             sender_name TEXT,
@@ -164,7 +165,7 @@ def store_sent_email(sender_email, sender_name, subject, original_body, reply_bo
     cursor = conn.cursor()
 
     cursor.execute(
-        'INSERT INTO sent_emails (sender_email, sender_name, subject, original_body, reply_body) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO sent_emails_legacy (sender_email, sender_name, subject, original_body, reply_body) VALUES (?, ?, ?, ?, ?)',
         (sender_email, sender_name, subject, original_body, reply_body)
     )
 
@@ -205,16 +206,16 @@ def get_stats():
 
     edit_rate = edited / total if total > 0 else 0
 
-    cursor.execute('SELECT COUNT(*) as sent FROM sent_emails')
-    sent_count = cursor.fetchone()['sent']
-
     conn.close()
+
+    from services.vector_service import get_collection_count
+    historical_emails = get_collection_count()
 
     return {
         'total_generated': total,
         'avg_rating': round(avg_rating, 1),
         'edit_rate': round(edit_rate, 2),
-        'historical_emails': sent_count
+        'historical_emails': historical_emails
     }
 
 
@@ -274,12 +275,12 @@ def get_user_preferences():
 
 
 def get_sent_emails(limit=50):
-    """Get historical sent emails for RAG context."""
+    """Get historical sent emails for RAG context. Legacy - data now lives in ChromaDB."""
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        'SELECT * FROM sent_emails ORDER BY imported_at DESC LIMIT ?',
+        'SELECT * FROM sent_emails_legacy ORDER BY imported_at DESC LIMIT ?',
         (limit,)
     )
 
