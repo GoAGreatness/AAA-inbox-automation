@@ -10,6 +10,36 @@ import os
 from services.vector_service import find_similar_emails
 
 
+RAG_MIN = 5
+RAG_MAX = 20
+
+
+def _determine_rag_depth(subject, body, provider, user_config):
+    """
+    Ask the LLM how many similar past emails it needs to answer this email well.
+    Returns an integer clamped between RAG_MIN and RAG_MAX.
+    """
+    prompt = f"""You are deciding how many similar past email examples you need to write a comprehensive reply.
+
+Incoming email:
+Subject: {subject}
+Body: {body}
+
+Consider: length, number of questions, topic complexity, and specificity.
+Reply with ONLY a single integer between {RAG_MIN} and {RAG_MAX}. No explanation."""
+
+    try:
+        if provider == 'goa':
+            raw, _ = _call_goa(prompt)
+        else:
+            raw, _ = _call_ollama(prompt)
+
+        n = int(''.join(filter(str.isdigit, raw.strip().split()[0])))
+        return max(RAG_MIN, min(RAG_MAX, n))
+    except Exception:
+        return 15  # fallback to default
+
+
 def generate_email_response(subject, sender_name, sender_email, body, user_config=None, user_preferences=None):
     """
     Generate an AI response using either Ollama (local) or GoA LLM cluster.
@@ -20,8 +50,9 @@ def generate_email_response(subject, sender_name, sender_email, body, user_confi
     if user_config and user_config.get('ai_provider'):
         provider = user_config['ai_provider']
 
-    # RAG: Find similar past emails for context
-    similar = find_similar_emails(subject, body)
+    # RAG: Ask LLM how many similar emails it needs, then fetch that many
+    rag_depth = _determine_rag_depth(subject, body, provider, user_config)
+    similar = find_similar_emails(subject, body, n_results=rag_depth)
     context = _build_context(similar)
 
     # Build user identity section from config
