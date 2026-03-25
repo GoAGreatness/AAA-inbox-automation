@@ -14,6 +14,7 @@ app = Flask(__name__)
 # Initialize database on startup
 from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config, save_user_preferences, get_user_preferences
 from services.vector_service import add_sent_email, get_collection_count
+from services.thread_parser import parse_thread
 init_database()
 
 # Configure CORS - allow all origins for development
@@ -168,12 +169,13 @@ def import_sent_emails():
             continue
 
         try:
+            parsed = parse_thread(body)
             email_id = f"vba-{hashlib.md5((subject + body[:100]).encode()).hexdigest()[:12]}"
             add_sent_email(
                 email_id=email_id,
                 subject=subject,
-                original_body='',
-                reply_body=body
+                original_body=parsed['original_body'],
+                reply_body=parsed['reply_body']
             )
             imported += 1
         except Exception as e:

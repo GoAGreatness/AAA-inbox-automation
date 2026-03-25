@@ -66,6 +66,12 @@ GENERAL
   - Exception: Don't prompt commits for standalone version-stack.md or preference doc updates
   - Only skip if no other files were changed alongside them
 
+VBA UPDATES
+-----------
+- Any change to a .vba file MUST be accompanied by a clear reminder that the user needs to manually update the macro inside Outlook (Alt+F11)
+- Always list exactly which Sub(s) need updating and what line(s) to change
+- File changes alone do NOT take effect — Outlook loads VBA from its own internal store
+
 BOUNDARIES
 ----------
 - NEVER read or write the .env file under any circumstances — treat it as off-limits

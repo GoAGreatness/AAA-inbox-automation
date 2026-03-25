@@ -10,14 +10,18 @@
    - **Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing. Only the annotation text should be removed, formatting should be preserved. Fix in dedicated branch.
 4. **AI Provider Options** - ✅ Complete - GoA LLM cluster integrated alongside Ollama. User selects provider in Settings modal + first-run setup. Provider stored in user config, passed to ai_service.py which branches between _call_ollama() and _call_goa(). GoA uses OpenAI-compatible API. Tested: 1.5s generation time.
    - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
+   - **TODO**: Add Gemini as a third provider option (free tier, 1000 req/day on Flash-Lite). OpenAI-compatible endpoint — minimal integration effort. Motivation: potentially better contextual understanding for email generation.
    - **TODO**: Per-model annotation preferences (currently global — both models use all annotations, which is correct default). Future: allow user to configure per-model in Settings.
    - **TODO**: Clearing user profile should cascade to user_preferences and all associated metadata. Deferred until sessions/profiles are properly implemented.
 5. **Sent Email Import** - ✅ Complete - Import is a standalone VBA button (decoupled from Generate). VBA hands off to background PowerShell script (import_sent.ps1) — no Outlook freeze. Windows toast notification confirms completion. First-run setup shows import reminder before generating. Post-generate reminder fires every 10 generations. RAG badge working.
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
-9. **Annotation-Based Preference Learning** - ✅ Complete - Future: allow user to view and edit stored preference notes in the Settings modal. - Users add `[[notes]]` in edited responses. Frontend extracts + strips them before copying. Annotations sent to backend, stored in `user_preferences` table (deduped). AI prompt includes all stored preferences on every generation.
+9. **Annotation-Based Preference Learning** - ✅ Complete - Users add `[[notes]]` in edited responses. Frontend extracts + strips them before copying. Annotations sent to backend, stored in `user_preferences` table (deduped). AI prompt includes all stored preferences on every generation.
+   - **TODO**: Allow user to view, edit, and remove individual stored annotations in the Settings modal.
+   - **TODO**: Allow user to select which annotations are directly relevant before generating a response (per-generation annotation filtering).
 10. **User Documentation Page** - Static page (with dropdowns/accordions) explaining all add-in features and how to use them. Linked from the web app footer. (SWE term: User Guide / Product Docs)
+11. **External Input Text Box** - A text box in the UI allowing users to provide additional context/instructions before generation (e.g. "focus on the third question only", "keep it under 3 sentences"). Injected into the prompt alongside annotations and RAG context.
 
 ## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
 - [x] Trust SSL cert in machine store (via .z admin account)
