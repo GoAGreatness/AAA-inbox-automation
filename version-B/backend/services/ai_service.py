@@ -173,6 +173,9 @@ def _build_context(similar_emails):
     for i, email in enumerate(similar_emails, 1):
         context += f"--- Past Example {i} ---\n"
         context += f"Subject: {email['subject']}\n"
+        original = email.get('original_body', '').strip()
+        if original:
+            context += f"Original email received: {original}\n"
         context += f"Reply sent: {email['reply']}\n\n"
 
     return context

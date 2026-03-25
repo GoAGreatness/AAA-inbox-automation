@@ -96,7 +96,7 @@ End Sub
 
 
 ' ------------------------------------------------------------
-' Import last 50 sent emails into AI knowledge base (ChromaDB)
+' Import last 80 sent emails into AI knowledge base (ChromaDB)
 ' Triggered manually via Quick Access Toolbar button.
 ' Uses MD5-based IDs on backend so duplicates are safe to send.
 ' Run this at least once before first use, then periodically.
@@ -112,7 +112,7 @@ Sub ImportSentEmails()
     Dim count As Integer
     Dim maxEmails As Integer
 
-    maxEmails = 50
+    maxEmails = 80
 
     On Error GoTo ImportError
 
@@ -177,8 +177,8 @@ Sub ImportSentEmails()
             strBody = objItem.Body
 
             ' Truncate body to keep payload manageable
-            If Len(strBody) > 500 Then
-                strBody = Left(strBody, 500)
+            If Len(strBody) > 10000 Then
+                strBody = Left(strBody, 10000)
             End If
 
             If count > 0 Then emailsJson = emailsJson & ","
@@ -210,7 +210,7 @@ Sub ImportSentEmails()
     Set objShell = CreateObject("WScript.Shell")
     objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & psScript & """ -PayloadFile """ & tempFile & """", 0, False
 
-    MsgBox count & " sent emails queued for import. Running in background.", vbInformation, "Import Started"
+    MsgBox count & " sent email threads queued for import. Running in background.", vbInformation, "Import Started"
     Exit Sub
 
 ImportError:
