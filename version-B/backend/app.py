@@ -45,6 +45,8 @@ def generate_response():
     sender_email = data.get('sender_email', '')
     sender_name = data.get('sender_name', '')
     body = data.get('body', '')
+    extra_instructions = data.get('extra_instructions', '')
+    style = data.get('style', 'standard')
 
     try:
         from services.ai_service import generate_email_response
@@ -54,7 +56,8 @@ def generate_response():
 
         user_config = get_user_config()
         user_preferences = get_user_preferences()
-        result = generate_email_response(subject, sender_name, sender_email, body, user_config, user_preferences)
+        result = generate_email_response(subject, sender_name, sender_email, body, user_config, user_preferences,
+                                         extra_instructions=extra_instructions, style=style)
 
         # Store the generated response in database
         response_id = store_response(email_id, result['generated_response'], result['model'], result['generation_time_ms'])
