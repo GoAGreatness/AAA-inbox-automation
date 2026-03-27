@@ -40,7 +40,16 @@ Reply with ONLY a single integer between {RAG_MIN} and {RAG_MAX}. No explanation
         return 15  # fallback to default
 
 
-def generate_email_response(subject, sender_name, sender_email, body, user_config=None, user_preferences=None):
+STYLE_INSTRUCTIONS = {
+    'standard':     'Write a balanced, professional response of 2-3 paragraphs.',
+    'concise':      'Write a brief, direct response. One paragraph maximum. No fluff.',
+    'detailed':     'Write a thorough response that addresses every point and question fully. Be comprehensive.',
+    'step-by-step': 'Structure your response using numbered steps or bullet points where appropriate.'
+}
+
+
+def generate_email_response(subject, sender_name, sender_email, body, user_config=None, user_preferences=None,
+                             extra_instructions='', style='standard'):
     """
     Generate an AI response using either Ollama (local) or GoA LLM cluster.
     Provider is determined by the AI_PROVIDER env variable or user config.
@@ -83,6 +92,12 @@ def generate_email_response(subject, sender_name, sender_email, body, user_confi
     else:
         preferences_section = ""
 
+    # Writing style instruction
+    style_instruction = STYLE_INSTRUCTIONS.get(style, STYLE_INSTRUCTIONS['standard'])
+
+    # Extra user instructions
+    extra_section = f"\nAdditional instructions from user: {extra_instructions}" if extra_instructions else ""
+
     prompt = f"""You are a professional email assistant. {identity}
 {preferences_section}
 {context}
@@ -98,10 +113,10 @@ Instructions:
 2. Address the sender by name
 3. Be professional and helpful
 4. Answer any questions in the email
-5. Keep it concise (2-3 paragraphs)
+5. {style_instruction}
 6. Do NOT include a subject line, just the response body
 7. If similar past responses are provided above, match their tone and style
-{signature_instruction}
+{signature_instruction}{extra_section}
 
 Response:"""
 

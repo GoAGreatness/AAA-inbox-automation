@@ -106,6 +106,56 @@
             width: 100%;
         }
 
+        .generate-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-generate {
+            flex: 3;
+        }
+
+        .btn-style-select {
+            flex: 1;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #0078d4;
+            color: white;
+            transition: all 0.15s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            text-align: center;
+        }
+
+        .btn-style-select:hover {
+            background: #005a9e;
+        }
+
+        .extra-instructions {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #222;
+            resize: none;
+            transition: border-color 0.15s;
+            margin-bottom: 10px;
+            min-height: 48px;
+            line-height: 1.5;
+        }
+
+        .extra-instructions:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -327,9 +377,21 @@
 
         <!-- Generate Button -->
         <div class="card" id="generateCard">
-            <button class="btn btn-primary" id="generateBtn" onclick="generateResponse()">
-                &#10024; Generate Response
-            </button>
+            <textarea class="extra-instructions" id="extraInstructions"
+                placeholder="Have any specific instructions? (optional)"
+                rows="2"
+                oninput="saveExtraInstructions()"></textarea>
+            <div class="generate-row">
+                <button class="btn btn-primary btn-generate" id="generateBtn" onclick="generateResponse()">
+                    &#10024; Generate Response
+                </button>
+                <select class="btn-style-select" id="styleSelect" onchange="saveStylePreference()">
+                    <option value="standard">Standard</option>
+                    <option value="concise">Concise</option>
+                    <option value="detailed">Detailed</option>
+                    <option value="step-by-step">Step-by-Step</option>
+                </select>
+            </div>
             <p class="hint">Uses your past sent emails as context for better responses</p>
         </div>
 

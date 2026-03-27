@@ -86,3 +86,5 @@ DATA SECURITY
 - All user/email data stays LOCAL ONLY (SQLite, ChromaDB, file imports)
 - No sensitive info in code, comments, prompts, or config files
 - When creating sample/test data, use generic placeholders (test@example.com, "John Doe", etc.)
+- Always consider organizational safety before suggesting commands that touch live mailbox/org data
+- Prefer manual Outlook UI actions over scripts for anything that modifies live email/mailbox data

@@ -14,7 +14,23 @@ let currentRating = null;
 /**
  * On page load: check user config, populate UI, auto-generate
  */
+function saveExtraInstructions() {
+    localStorage.setItem('extraInstructions', document.getElementById('extraInstructions').value);
+}
+
+function saveStylePreference() {
+    localStorage.setItem('stylePreference', document.getElementById('styleSelect').value);
+}
+
+function restoreGenerationPreferences() {
+    const instructions = localStorage.getItem('extraInstructions') || '';
+    const style = localStorage.getItem('stylePreference') || 'standard';
+    document.getElementById('extraInstructions').value = instructions;
+    document.getElementById('styleSelect').value = style;
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
+    restoreGenerationPreferences();
     const params = new URLSearchParams(window.location.search);
 
     const subject = params.get('subject') || '';
@@ -125,7 +141,9 @@ async function generateResponse(subject, senderName, senderEmail, body) {
         subject: subject === '-' ? '' : subject,
         sender_name: senderName === '-' ? '' : senderName,
         sender_email: senderEmail === '-' ? '' : senderEmail,
-        body: body
+        body: body,
+        extra_instructions: document.getElementById('extraInstructions').value.trim(),
+        style: document.getElementById('styleSelect').value
     };
 
     try {
