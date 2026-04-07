@@ -39,7 +39,8 @@ def add_sent_email(email_id, subject, original_body, reply_body):
         ids=[str(email_id)],
         metadatas=[{
             "subject": subject,
-            "reply_body": reply_body
+            "reply_body": reply_body,
+            "original_body": original_body
         }]
     )
 
@@ -66,6 +67,7 @@ def find_similar_emails(subject, body, n_results=15):
             'id': results['ids'][0][i],
             'document': results['documents'][0][i],
             'reply': results['metadatas'][0][i].get('reply_body', ''),
+            'original_body': results['metadatas'][0][i].get('original_body', ''),
             'subject': results['metadatas'][0][i].get('subject', ''),
             'distance': results['distances'][0][i]
         })

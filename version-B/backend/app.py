@@ -14,6 +14,7 @@ app = Flask(__name__)
 # Initialize database on startup
 from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config, save_user_preferences, get_user_preferences
 from services.vector_service import add_sent_email, get_collection_count
+from services.thread_parser import parse_thread
 init_database()
 
 # Configure CORS - allow all origins for development
@@ -44,6 +45,8 @@ def generate_response():
     sender_email = data.get('sender_email', '')
     sender_name = data.get('sender_name', '')
     body = data.get('body', '')
+    extra_instructions = data.get('extra_instructions', '')
+    style = data.get('style', 'standard')
 
     try:
         from services.ai_service import generate_email_response
@@ -53,7 +56,8 @@ def generate_response():
 
         user_config = get_user_config()
         user_preferences = get_user_preferences()
-        result = generate_email_response(subject, sender_name, sender_email, body, user_config, user_preferences)
+        result = generate_email_response(subject, sender_name, sender_email, body, user_config, user_preferences,
+                                         extra_instructions=extra_instructions, style=style)
 
         # Store the generated response in database
         response_id = store_response(email_id, result['generated_response'], result['model'], result['generation_time_ms'])
@@ -168,12 +172,13 @@ def import_sent_emails():
             continue
 
         try:
+            parsed = parse_thread(body)
             email_id = f"vba-{hashlib.md5((subject + body[:100]).encode()).hexdigest()[:12]}"
             add_sent_email(
                 email_id=email_id,
                 subject=subject,
-                original_body='',
-                reply_body=body
+                original_body=parsed['original_body'],
+                reply_body=parsed['reply_body']
             )
             imported += 1
         except Exception as e:

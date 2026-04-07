@@ -37,7 +37,7 @@ try {
         -ContentType "application/json; charset=utf-8" `
         -Body $bodyBytes | Out-Null
 
-    Show-ToastNotification "Import Complete" "$count sent emails imported into AI knowledge base."
+    Show-ToastNotification "Import Complete" "$count sent email threads imported into AI knowledge base."
 
 } catch {
     Show-ToastNotification "Import Failed" "Could not reach backend. Make sure the server is running on port 5000."

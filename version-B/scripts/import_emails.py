@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from services.database_service import init_database, store_sent_email
 from services.vector_service import add_sent_email, get_collection_count
+from services.thread_parser import parse_thread
 
 # Path to imported emails
 IMPORT_PATH = os.path.join(os.path.dirname(__file__), '..', 'backend', 'data', 'email-imports')
@@ -74,21 +75,24 @@ def import_all_emails():
             skipped += 1
             continue
 
+        # Parse thread to separate reply from quoted original
+        parsed = parse_thread(data['body'])
+
         # Store in SQLite
         email_id = store_sent_email(
             sender_email=data['sender_email'],
             sender_name=data['sender_name'],
             subject=data['subject'],
-            original_body='',  # .msg is the sent reply, not the original
-            reply_body=data['body']
+            original_body=parsed['original_body'],
+            reply_body=parsed['reply_body']
         )
 
         # Store in ChromaDB for semantic search
         add_sent_email(
             email_id=email_id,
             subject=data['subject'],
-            original_body='',
-            reply_body=data['body']
+            original_body=parsed['original_body'],
+            reply_body=parsed['reply_body']
         )
 
         success += 1
