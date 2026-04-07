@@ -23,11 +23,12 @@ ids = results['ids']
 documents = results['documents']
 metadatas = results['metadatas']
 
-print(f"\n{'#':<5} {'ID':<10} {'Subject'}")
-print("-" * 80)
+print(f"\n{'#':<5} {'ID':<10} {'Thread':<12} {'Subject'}")
+print("-" * 90)
 for i, (eid, meta) in enumerate(zip(ids, metadatas)):
     subject = meta.get('subject', '(no subject)')
-    print(f"{i+1:<5} {eid:<10} {subject}")
+    thread_count = 2 if meta.get('original_body', '').strip() else 1
+    print(f"{i+1:<5} {eid:<10} ({thread_count} emails){'':3} {subject}")
 
 print()
 choice = input("Enter # or ID to see full email (or press Enter to skip): ").strip()
@@ -53,6 +54,15 @@ if choice:
     if selected_doc:
         print(f"\nID:      {selected_id}")
         print(f"Subject: {selected_meta.get('subject', '(none)')}")
-        print(f"\n--- Full Document ---\n{selected_doc}")
+
+        original = selected_meta.get('original_body', '').strip()
+        reply = selected_meta.get('reply_body', '').strip()
+
+        if original:
+            print(f"\n--- Original Email Received ---\n{original}")
+        else:
+            print(f"\n--- Original Email Received ---\n(not parsed — imported before thread awareness)")
+
+        print(f"\n--- Your Reply ---\n{reply}")
     else:
         print("Not found.")
