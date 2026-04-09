@@ -70,10 +70,10 @@ def generate_response():
             'similar_emails_used': result.get('similar_emails_used', 0)
         }
     except Exception as e:
-        # Fallback if Ollama is not running
+        # Fallback if AI provider is unavailable
         response = {
             'response_id': 'fallback',
-            'generated_response': f"[Ollama unavailable: {str(e)}]\n\nDear {sender_name},\n\nThank you for your email about '{subject}'.\n\nBest regards,\nThe Team",
+            'generated_response': f"[AI provider error: {str(e)}]\n\nDear {sender_name},\n\nThank you for your email about '{subject}'.\n\nBest regards,\nThe Team",
             'generation_time_ms': 0,
             'error': str(e)
         }
