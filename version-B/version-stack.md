@@ -8,10 +8,10 @@
    - **TODO**: Dynamic RAG context depth — currently fixed at 15 (bumped from 12, 2026-03-11). Future: LLM-driven selection — pre-prompt asks model to assess email complexity and return a count, then that count drives `find_similar_emails()`. Planned for branch `version-b-dev--feature--information-processing`.
    - **Bug**: "Always include signature" checkbox unchecking does not persist — `use_signature` not saving correctly. Fix in dedicated branch.
    - **Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing. Only the annotation text should be removed, formatting should be preserved. Fix in dedicated branch.
-4. **AI Provider Options** - ✅ Complete - GoA LLM cluster integrated alongside Ollama. User selects provider in Settings modal + first-run setup. Provider stored in user config, passed to ai_service.py which branches between _call_ollama() and _call_goa(). GoA uses OpenAI-compatible API. Tested: 1.5s generation time.
+4. **AI Provider Options** - ✅ Complete - Gemini (default), GoA LLM cluster, and Ollama all integrated (2026-04-10). User selects provider in Settings modal + first-run setup. Gemini uses Google's OpenAI-compatible endpoint (gemini-2.0-flash, free tier 1500 req/day). Error handling improved — provider failures now show a persistent modal popup with "Open Settings" shortcut instead of dumping error text into the response box.
    - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
-   - **TODO**: Add Gemini as a third provider option (free tier, 1000 req/day on Flash-Lite). OpenAI-compatible endpoint — minimal integration effort. Motivation: potentially better contextual understanding for email generation.
-   - **TODO**: Per-model annotation preferences (currently global — both models use all annotations, which is correct default). Future: allow user to configure per-model in Settings.
+   - **TODO**: GoA endpoint returning 404 — endpoint URL or model name may have changed. Confirm with boss.
+   - **TODO**: Per-model annotation preferences (currently global). Future: allow user to configure per-model in Settings.
    - **TODO**: Clearing user profile should cascade to user_preferences and all associated metadata. Deferred until sessions/profiles are properly implemented.
 5. **Sent Email Import** - ✅ Complete - Import is a standalone VBA button (decoupled from Generate). VBA hands off to background PowerShell script (import_sent.ps1) — no Outlook freeze. Windows toast notification confirms completion. First-run setup shows import reminder before generating. Post-generate reminder fires every 10 generations. RAG badge working.
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
@@ -535,22 +535,67 @@ URL params on load and immediately calls the backend to generate a response.
 
 ---
 
-### **Stage 9: Polish & Production Readiness** ⏳
-**Goal**: Make it robust and user-friendly
+### **Stage 9: GitHub & DevOps Setup** ⏳
+**Goal**: Establish professional SDLC infrastructure
 
 **Tasks**:
-- [ ] EWS / Graph API for auto-importing sent emails (EWS blocked by GoA policy - needs Graph API)
-- [ ] Add comprehensive error handling
-- [ ] Implement logging (backend and add-in)
-- [ ] Add offline detection and graceful degradation
-- [ ] Create user documentation
-- [ ] Performance optimization (caching, etc.)
-- [ ] Security review (API keys, CORS, etc.)
-- [ ] Package for deployment (if sharing with team)
+- [ ] GitHub Issues — migrate version-stack TODOs to Issues for tracking
+- [ ] Branch protection on `main` — require PRs, no direct pushes
+- [ ] GitHub Secrets — store API keys (GEMINI_API_KEY, GOA_API_KEY) for deployment
+- [ ] GitHub Environments — separate `dev` and `prod` configs
+- [ ] GitHub Actions — CI/CD pipeline (runs tests on every PR)
 
-**Deliverable**: Production-ready Version B
+**Deliverable**: Professional repo with protected branches, secrets management, and CI/CD foundation
 
-**Estimated Time**: 4-5 hours
+---
+
+### **Stage 10: Testing** ⏳
+**Goal**: Automated test coverage across backend and frontend
+
+**Tasks**:
+- [ ] pytest — Python backend unit tests (Flask routes, ai_service, database_service)
+- [ ] Jest — JS unit tests for frontend logic (taskpane.js / webapp.js)
+- [ ] Cypress — E2E tests for the web app UI
+- [ ] Postman/Newman — API endpoint tests
+- [ ] Wire tests into GitHub Actions (runs on every PR)
+
+**Deliverable**: Test suite running in CI on every PR
+
+---
+
+### **Stage 11: Containerization** ⏳
+**Goal**: Package app for consistent deployment
+
+**Tasks**:
+- [ ] Dockerfile for Flask backend
+- [ ] Docker Compose for local dev (backend + ChromaDB)
+- [ ] Test containerized build locally
+
+**Deliverable**: App runs identically in any environment via Docker
+
+---
+
+### **Stage 12: Deployment** ⏳
+**Goal**: Deploy to production (internal GoA infrastructure)
+
+**Tasks**:
+- [ ] Azure App Service (free F1 tier) for Flask backend — GoA uses Azure
+- [ ] Azure Static Web Apps for add-in static files
+- [ ] Migrate SQLite → PostgreSQL for production
+- [ ] New Relic (free tier) or Azure Monitor for observability
+- [ ] Update manifest.xml to point to production URLs
+- [ ] Security review (FOIP/ATIA compliance, OAuth 2.0, RBAC)
+- [ ] EWS / Graph API for auto-importing sent emails (EWS blocked by GoA policy)
+
+**Stack for deployment**:
+- Hosting: Azure App Service (GoA uses Azure)
+- Database: PostgreSQL (replaces SQLite)
+- Monitoring: New Relic free tier (100GB/month) or Azure Monitor
+- CI/CD: GitHub Actions → Azure
+
+**Deliverable**: Production-ready Version B accessible to team
+
+**Estimated Time**: TBD
 
 ---
 
@@ -587,25 +632,21 @@ URL params on load and immediately calls the backend to generate a response.
 ---
 
 ### AI Provider Selection
-**Decision**: Start with Anthropic API, allow Ollama fallback
+**Current**: Three providers available — user selects in Settings modal
 
-**Anthropic API (Claude)**:
-- ✅ Better quality
-- ✅ Faster responses
-- ✅ Easier setup
-- ✅ Cost-effective (~$0.001/email with Haiku)
-- ❌ Requires internet
-- ❌ Sends data externally (review privacy policy)
+**Ollama (Local)** ✅ Default fallback
+- Fully offline, free, complete data privacy
+- Slower, lower quality (llama3.2:3b)
 
-**Ollama (Local)**:
-- ✅ Fully offline
-- ✅ Free after setup
-- ✅ Complete data privacy
-- ❌ Slower responses
-- ❌ Requires more powerful hardware
-- ❌ Model quality varies
+**GoA LLM Cluster** ✅ Integrated (endpoint currently 404 — needs confirmation)
+- Internal government GPT cluster (gpt-oss-120b)
+- OpenAI-compatible API, ~1.5s generation
+- Requires VPN
 
-**Recommendation**: Start with Anthropic API for POC, add Ollama option if privacy is strict requirement.
+**Google Gemini** ✅ Added 2026-04-09
+- gemini-2.0-flash, free tier (1500 req/day)
+- OpenAI-compatible endpoint
+- Best free option for quality + speed
 
 ---
 
