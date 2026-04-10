@@ -20,8 +20,8 @@ function Show-ToastNotification($title, $message) {
 }
 
 try {
-    # Read payload from temp file
-    $jsonBody = Get-Content -Path $PayloadFile -Raw
+    # Read payload from temp file (VBA writes ANSI/Windows-1252, use Default to read correctly)
+    $jsonBody = Get-Content -Path $PayloadFile -Raw -Encoding Default
 
     # Count emails in payload for notification message
     $payload = $jsonBody | ConvertFrom-Json

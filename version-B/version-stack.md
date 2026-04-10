@@ -7,7 +7,7 @@
 3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
    - **Bug**: "Always include signature" checkbox unchecking does not persist — `use_signature` not saving correctly. Fix in dedicated branch.
    - **Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing. Only the annotation text should be removed, formatting should be preserved. Fix in dedicated branch.
-4. **AI Provider Options** - ✅ Complete - GoA LLM cluster + Ollama integrated. Gemini (gemini-2.0-flash) added as third provider (2026-04-09) — free tier (1500 req/day), OpenAI-compatible endpoint. User selects provider in Settings modal + first-run setup.
+4. **AI Provider Options** - ✅ Complete - Gemini (default), GoA LLM cluster, and Ollama all integrated (2026-04-10). User selects provider in Settings modal + first-run setup. Gemini uses Google's OpenAI-compatible endpoint (gemini-2.0-flash, free tier 1500 req/day). Error handling improved — provider failures now show a persistent modal popup with "Open Settings" shortcut instead of dumping error text into the response box.
    - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
    - **TODO**: GoA endpoint returning 404 — endpoint URL or model name may have changed. Confirm with boss.
    - **TODO**: Per-model annotation preferences (currently global). Future: allow user to configure per-model in Settings.

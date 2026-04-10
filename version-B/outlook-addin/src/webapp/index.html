@@ -410,8 +410,9 @@
             <select id="settingsAiProvider"
                 style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
                        font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
-                <option value="ollama">Ollama (Local)</option>
+                <option value="gemini">Google Gemini (Recommended)</option>
                 <option value="goa">GoA LLM Cluster</option>
+                <option value="ollama">Ollama (Local)</option>
             </select>
 
             <div style="display:flex; gap:10px;">
@@ -441,6 +442,28 @@
                        padding:10px 24px; font-size:14px; font-weight:600; cursor:pointer;">
                 Got it
             </button>
+        </div>
+    </div>
+
+    <!-- AI provider error modal -->
+    <div id="providerErrorModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:420px; width:90%; margin:auto; text-align:center;">
+            <div style="font-size:32px; margin-bottom:12px;">⚠️</div>
+            <h3 style="margin:0 0 12px 0; font-size:17px; color:#1a1a2e;">AI Provider Unavailable</h3>
+            <p id="providerErrorMsg" style="font-size:14px; color:#555; line-height:1.6; margin:0 0 20px 0;"></p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="closeProviderError()"
+                    style="background:#6c757d; color:white; border:none; border-radius:8px;
+                           padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Dismiss
+                </button>
+                <button onclick="closeProviderError(); openSettings();"
+                    style="background:#0078d4; color:white; border:none; border-radius:8px;
+                           padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Open Settings
+                </button>
+            </div>
         </div>
     </div>
 
@@ -496,8 +519,9 @@
             <select id="setupAiProvider"
                 style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
                        font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
-                <option value="ollama">Ollama (Local)</option>
+                <option value="gemini">Google Gemini (Recommended)</option>
                 <option value="goa">GoA LLM Cluster</option>
+                <option value="ollama">Ollama (Local)</option>
             </select>
 
             <button onclick="saveSetup()"

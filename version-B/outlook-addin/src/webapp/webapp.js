@@ -171,9 +171,11 @@ async function generateResponse(subject, senderName, senderEmail, body) {
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            showStatus('Request timed out. Try again.', 'error');
+            showProviderError('The request timed out. The AI provider may be slow or unreachable. Try again or switch providers in Settings.');
         } else if (error.message.includes('Failed to fetch')) {
             showStatus('Cannot reach backend. Is the server running on port 5000?', 'error');
+        } else if (error.message.includes('500') || error.message.includes('provider')) {
+            showProviderError('The selected AI provider failed to respond. Check your connection or switch to a different provider in Settings.');
         } else {
             showStatus(`Error: ${error.message}`, 'error');
         }
@@ -280,7 +282,7 @@ async function openSettings() {
         document.getElementById('settingsUseSig').checked = config.use_signature !== false;
         document.getElementById('settingsSharedMailbox').value = config.shared_mailbox_name || '';
         document.getElementById('settingsAutoGenerate').checked = config.auto_generate === 1 || config.auto_generate === true;
-        document.getElementById('settingsAiProvider').value = config.ai_provider || 'ollama';
+        document.getElementById('settingsAiProvider').value = config.ai_provider || 'gemini';
     } catch (e) {
         console.error('Could not load settings:', e);
     }
@@ -364,6 +366,15 @@ function showImportReminder(isFirstTime) {
 
 function closeImportReminder() {
     document.getElementById('importReminderModal').style.display = 'none';
+}
+
+function showProviderError(message) {
+    document.getElementById('providerErrorMsg').textContent = message;
+    document.getElementById('providerErrorModal').style.display = 'flex';
+}
+
+function closeProviderError() {
+    document.getElementById('providerErrorModal').style.display = 'none';
 }
 
 

@@ -66,13 +66,7 @@ def generate_response():
             'similar_emails_used': result.get('similar_emails_used', 0)
         }
     except Exception as e:
-        # Fallback if Ollama is not running
-        response = {
-            'response_id': 'fallback',
-            'generated_response': f"[Ollama unavailable: {str(e)}]\n\nDear {sender_name},\n\nThank you for your email about '{subject}'.\n\nBest regards,\nThe Team",
-            'generation_time_ms': 0,
-            'error': str(e)
-        }
+        return jsonify({'error': str(e), 'error_type': 'provider_unavailable'}), 500
 
     return jsonify(response)
 
@@ -151,7 +145,21 @@ def import_sent_emails():
     Uses MD5 hash of subject+body as ID to prevent duplicate imports.
     """
     import hashlib
-    data = request.get_json()
+    import json
+
+    import json
+
+    data = request.get_json(silent=True)
+    if data is None:
+        try:
+            # VBA writes files in Windows-1252. cp1252 correctly maps special chars
+            # (smart quotes, em-dashes, ellipsis, etc.) to valid Unicode instead of
+            # C1 control characters, which are invalid in JSON strings.
+            raw = request.data.decode('cp1252')
+            data = json.loads(raw)
+        except Exception as e:
+            return jsonify({'error': f'Invalid JSON payload: {str(e)}'}), 400
+
     emails = data.get('emails', [])
 
     imported = 0
