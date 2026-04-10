@@ -1,5 +1,5 @@
 """
-AI Service - Handles communication with Ollama or GoA LLM cluster.
+AI Service - Handles communication with Ollama, GoA LLM cluster, or Google Gemini.
 Uses RAG (Retrieval Augmented Generation) to find similar past emails
 and feed them as context to improve response quality.
 """
@@ -12,11 +12,11 @@ from services.vector_service import find_similar_emails
 
 def generate_email_response(subject, sender_name, sender_email, body, user_config=None, user_preferences=None):
     """
-    Generate an AI response using either Ollama (local) or GoA LLM cluster.
+    Generate an AI response using Ollama, GoA LLM cluster, or Google Gemini.
     Provider is determined by the AI_PROVIDER env variable or user config.
     """
     # Determine provider — user config takes priority over env var
-    provider = os.getenv('AI_PROVIDER', 'ollama')
+    provider = os.getenv('AI_PROVIDER', 'gemini')
     if user_config and user_config.get('ai_provider'):
         provider = user_config['ai_provider']
 
@@ -78,6 +78,8 @@ Response:"""
 
     if provider == 'goa':
         response_text, model_name = _call_goa(prompt)
+    elif provider == 'gemini':
+        response_text, model_name = _call_gemini(prompt)
     else:
         response_text, model_name = _call_ollama(prompt)
 
@@ -125,6 +127,33 @@ def _call_goa(prompt):
         headers=headers,
         json=body,
         verify=False,
+        timeout=60
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data['choices'][0]['message']['content'], model
+
+
+def _call_gemini(prompt):
+    """Call Google Gemini via OpenAI-compatible API."""
+    api_key = os.getenv('GEMINI_API_KEY', '')
+    model = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+
+    body = {
+        'model': model,
+        'messages': [{'role': 'user', 'content': prompt}],
+        'max_tokens': 1024
+    }
+
+    response = requests.post(
+        'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        headers=headers,
+        json=body,
         timeout=60
     )
     response.raise_for_status()
