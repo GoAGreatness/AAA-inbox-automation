@@ -137,7 +137,7 @@ def _call_goa(prompt):
 def _call_gemini(prompt):
     """Call Google Gemini via OpenAI-compatible API."""
     api_key = os.getenv('GEMINI_API_KEY', '')
-    model = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
+    model = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
 
     headers = {
         'Content-Type': 'application/json',
@@ -156,6 +156,10 @@ def _call_gemini(prompt):
         json=body,
         timeout=60
     )
+
+    if not response.ok:
+        print(f"Gemini API error {response.status_code}: {response.text}")
+
     response.raise_for_status()
     data = response.json()
     return data['choices'][0]['message']['content'], model
