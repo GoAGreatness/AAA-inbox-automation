@@ -1,5 +1,5 @@
 """
-AI Service - Handles communication with Ollama or GoA LLM cluster.
+AI Service - Handles communication with Ollama, GoA LLM cluster, or Google Gemini.
 Uses RAG (Retrieval Augmented Generation) to find similar past emails
 and feed them as context to improve response quality.
 """
@@ -31,6 +31,8 @@ Reply with ONLY a single integer between {RAG_MIN} and {RAG_MAX}. No explanation
     try:
         if provider == 'goa':
             raw, _ = _call_goa(prompt)
+        elif provider == 'gemini':
+            raw, _ = _call_gemini(prompt)
         else:
             raw, _ = _call_ollama(prompt)
 
@@ -46,7 +48,7 @@ def generate_email_response(subject, sender_name, sender_email, body, user_confi
     Provider is determined by the AI_PROVIDER env variable or user config.
     """
     # Determine provider — user config takes priority over env var
-    provider = os.getenv('AI_PROVIDER', 'ollama')
+    provider = os.getenv('AI_PROVIDER', 'gemini')
     if user_config and user_config.get('ai_provider'):
         provider = user_config['ai_provider']
 
@@ -109,6 +111,8 @@ Response:"""
 
     if provider == 'goa':
         response_text, model_name = _call_goa(prompt)
+    elif provider == 'gemini':
+        response_text, model_name = _call_gemini(prompt)
     else:
         response_text, model_name = _call_ollama(prompt)
 
@@ -158,6 +162,31 @@ def _call_goa(prompt):
         verify=False,
         timeout=60
     )
+    response.raise_for_status()
+    data = response.json()
+    return data['choices'][0]['message']['content'], model
+
+
+def _call_gemini(prompt):
+    """Call Google Gemini via OpenAI-compatible API."""
+    api_key = os.getenv('GEMINI_API_KEY', '')
+    model = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+    body = {
+        'model': model,
+        'messages': [{'role': 'user', 'content': prompt}]
+    }
+    response = requests.post(
+        'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        headers=headers,
+        json=body,
+        timeout=60
+    )
+    if not response.ok:
+        print(f"Gemini API error {response.status_code}: {response.text}")
     response.raise_for_status()
     data = response.json()
     return data['choices'][0]['message']['content'], model
