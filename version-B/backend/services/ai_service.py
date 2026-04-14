@@ -146,8 +146,7 @@ def _call_gemini(prompt):
 
     body = {
         'model': model,
-        'messages': [{'role': 'user', 'content': prompt}],
-        'max_tokens': 1024
+        'messages': [{'role': 'user', 'content': prompt}]
     }
 
     response = requests.post(
