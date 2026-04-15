@@ -406,3 +406,25 @@ function showStatus(message, type) {
 function hideStatus() {
     document.getElementById('statusBar').className = 'status-bar';
 }
+
+// Ctrl+C nudge: if user presses Ctrl+C inside the response textarea,
+// shake the Copy button to encourage using it (so feedback fires).
+// Does NOT block or intercept the keypress — clipboard still works normally.
+document.addEventListener('DOMContentLoaded', () => {
+    const responseBox = document.getElementById('response');
+    const copyBtn = document.getElementById('copyBtn');
+
+    if (responseBox && copyBtn) {
+        responseBox.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'c') {
+                copyBtn.classList.remove('shake');
+                // Force reflow so re-triggering the animation works
+                void copyBtn.offsetWidth;
+                copyBtn.classList.add('shake');
+                copyBtn.addEventListener('animationend', () => {
+                    copyBtn.classList.remove('shake');
+                }, { once: true });
+            }
+        });
+    }
+});

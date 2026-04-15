@@ -176,12 +176,15 @@ def store_sent_email(sender_email, sender_name, subject, original_body, reply_bo
 
 
 def get_email_by_response_id(response_id):
-    """Get the original email linked to a response. Used for auto-learning."""
+    """Get the original email + generated response linked to a response id. Used for auto-learning."""
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        'SELECT e.* FROM emails e JOIN responses r ON e.id = r.email_id WHERE r.id = ?',
+        '''SELECT e.*, r.generated_response
+           FROM emails e
+           JOIN responses r ON e.id = r.email_id
+           WHERE r.id = ?''',
         (response_id,)
     )
 
