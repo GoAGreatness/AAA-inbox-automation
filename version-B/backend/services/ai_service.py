@@ -31,6 +31,8 @@ Reply with ONLY a single integer between {RAG_MIN} and {RAG_MAX}. No explanation
     try:
         if provider == 'goa':
             raw, _ = _call_goa(prompt)
+        elif provider == 'gemini':
+            raw, _ = _call_gemini(prompt)
         else:
             raw, _ = _call_ollama(prompt)
 
@@ -184,28 +186,22 @@ def _call_gemini(prompt):
     """Call Google Gemini via OpenAI-compatible API."""
     api_key = os.getenv('GEMINI_API_KEY', '')
     model = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
-
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {api_key}'
     }
-
     body = {
         'model': model,
-        'messages': [{'role': 'user', 'content': prompt}],
-        'max_tokens': 1024
+        'messages': [{'role': 'user', 'content': prompt}]
     }
-
     response = requests.post(
         'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
         headers=headers,
         json=body,
         timeout=60
     )
-
     if not response.ok:
         print(f"Gemini API error {response.status_code}: {response.text}")
-
     response.raise_for_status()
     data = response.json()
     return data['choices'][0]['message']['content'], model
