@@ -116,20 +116,40 @@ def store_feedback():
     if annotations:
         save_user_preferences(annotations)
 
-    # Auto-learn: add approved response to vector store
-    # This means future queries will find this response as a similar example
-    try:
-        email_data = get_email_by_response_id(response_id)
-        if email_data and final_response:
-            vector_id = f"approved-{response_id}"
-            add_sent_email(
-                email_id=vector_id,
-                subject=email_data['subject'],
-                original_body=email_data['body'],
-                reply_body=final_response
-            )
-    except Exception as e:
-        print(f"Auto-learn error (non-blocking): {e}")
+    # Edit diff analysis: if the user edited the response, ask the LLM what style patterns it can extract
+    if was_edited and final_response:
+        try:
+            from services.ai_service import analyze_edit_diff
+            email_data = get_email_by_response_id(response_id)
+            generated_response = email_data.get('generated_response') if email_data else None
+            user_config = get_user_config()
+            learned = analyze_edit_diff(generated_response, final_response, user_config)
+            if learned:
+                save_user_preferences(learned)
+                print(f"Edit diff analysis: learned {len(learned)} preference(s)")
+        except Exception as e:
+            print(f"Edit diff analysis error (non-blocking): {e}")
+
+    # Auto-learn: add approved response to vector store only if quality threshold met.
+    # Index if: rated >= 4, OR unrated and not edited (implicit approval).
+    # Don't index: rated <= 3, or unrated + edited (quality unknown).
+    rated_well = user_rating is not None and user_rating >= 4
+    implicit_approval = user_rating is None and not was_edited
+    should_index = rated_well or implicit_approval
+
+    if should_index:
+        try:
+            email_data = get_email_by_response_id(response_id)
+            if email_data and final_response:
+                vector_id = f"approved-{response_id}"
+                add_sent_email(
+                    email_id=vector_id,
+                    subject=email_data['subject'],
+                    original_body=email_data['body'],
+                    reply_body=final_response
+                )
+        except Exception as e:
+            print(f"Auto-learn error (non-blocking): {e}")
 
     return jsonify({
         'success': True,

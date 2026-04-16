@@ -489,7 +489,7 @@ Response:"""
 
 ---
 
-### **Stage 7: Learning & Feedback Loop** ✅ (Complete)
+### **Stage 7: Learning & Feedback Loop** ⏳ (Partially Complete)
 **Goal**: System learns from user edits
 
 **Tasks**:
@@ -498,12 +498,14 @@ Response:"""
 - [x] Re-embed and update vector store with new data (approved responses → ChromaDB)
 - [x] Add statistics dashboard in backend (/api/stats with vector_store_count)
 - [x] get_email_by_response_id() links responses back to original emails
-- [ ] Analyze common edits to identify patterns (deferred - Stage 8)
-- [ ] Create simple admin panel (deferred - Stage 8)
+- [x] Annotation-based preference learning (`[[notes]]` → user_preferences → prompt injection)
+- [ ] **Rating gate on ChromaDB indexing** — only index responses with rating ≥ 4 (or unedited). Currently all responses get indexed regardless of quality. Branch: `version-b-dev--feature--feedback-processing`
+- [ ] **Edit diff analysis via LLM** — on feedback submission, send generated vs final response to LLM to extract style patterns automatically (no manual annotations needed). Findings stored as user_preferences. Branch: `version-b-dev--feature--feedback-processing`
+- [ ] **Ctrl+C nudge** — detect Ctrl+C keypress when cursor is inside the generated response textarea. Shake the Copy Response button as a visual nudge (don't block or disable Ctrl+C — just encourage button use so feedback fires). Branch: `version-b-dev--feature--feedback-processing`
 
-**Deliverable**: System improves over time with usage ✅
+**Deliverable**: System improves over time with usage
 
-**Completed**: 2026-02-18
+**Branch**: `version-b-dev--feature--feedback-processing`
 
 **How it works**: When user submits feedback via /api/feedback, the approved response is automatically added to ChromaDB vector store. Future generations will find this response as a similar example via RAG, improving quality over time. Stats endpoint tracks total generated, avg rating, edit rate, and vector store growth.
 
@@ -532,6 +534,31 @@ VBA macro + standalone Chrome web app approach.
 **How it works**: VBA macro reads the selected email from Outlook via COM, URL-encodes
 the subject/sender/body, and opens Chrome with the webapp URL. The webapp reads those
 URL params on load and immediately calls the backend to generate a response.
+
+---
+
+### **Stage 8b: Dashboard / Main Page** ⏳
+**Goal**: Give the user a home screen that makes the add-in's intelligence visible and manageable
+
+**Background**: Currently the add-in opens directly to the response generator with no way to see what the system has learned, manage preferences, or check AI provider health. A dashboard page accessible via a third VBA button would close this gap.
+
+**Tasks**:
+- [ ] **Third VBA button** — "Open Dashboard" button added to Outlook Quick Access Toolbar, opens `https://localhost:3000/dashboard`
+- [ ] **Knowledge Base Health panel** — emails indexed in ChromaDB, last import date, bar chart showing knowledge base growth over time (Chart.js CDN, no install)
+- [ ] **What I've Learned panel** — preference manager: lists all stored `user_preferences` as deletable chips/tags. New backend endpoint: `DELETE /api/preferences/<id>`. Closes the "flying blind" problem with annotations.
+- [ ] **Your Writing Stats panel** — average rating trend over time (line chart), edit rate %, most-used style setting. Sourced from existing `/api/stats` + new `/api/learning-stats` endpoint.
+- [ ] **AI Provider Status indicator** — live ping showing active provider and reachability. Saves debugging confusion when provider is down.
+- [ ] **Quick Actions** — "Re-import Sent Items" shortcut (triggers VBA macro flow without reopening Outlook), "Clear Knowledge Base" with confirmation guard.
+- [ ] New backend endpoints: `GET /api/preferences`, `DELETE /api/preferences/<id>`, `GET /api/learning-stats`
+- [ ] Chart.js via CDN (single script tag) — no framework install needed
+
+**Design constraints**:
+- No third-party UI frameworks — consistent with existing plain HTML/CSS/JS webapp
+- Chart.js only (CDN) for charts
+- All data from existing endpoints + two new lightweight ones
+- Must work offline for everything except the AI provider ping
+
+**Branch**: `version-b-dev--feature--dashboard`
 
 ---
 
