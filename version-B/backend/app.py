@@ -70,7 +70,25 @@ def generate_response():
             'similar_emails_used': result.get('similar_emails_used', 0)
         }
     except Exception as e:
-        return jsonify({'error': str(e), 'error_type': 'provider_unavailable'}), 500
+        import requests as req_lib
+        status_code = None
+        if isinstance(e, req_lib.exceptions.HTTPError) and e.response is not None:
+            status_code = e.response.status_code
+        elif isinstance(e, req_lib.exceptions.Timeout):
+            status_code = 408
+        elif isinstance(e, req_lib.exceptions.ConnectionError):
+            status_code = 503
+
+        provider = os.getenv('AI_PROVIDER', 'ollama')
+        if data and data.get('ai_provider'):
+            provider = data['ai_provider']
+
+        return jsonify({
+            'error': str(e),
+            'error_type': 'provider_unavailable',
+            'status_code': status_code,
+            'provider': provider
+        }), 500
 
     return jsonify(response)
 
