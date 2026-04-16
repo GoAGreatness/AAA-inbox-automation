@@ -142,13 +142,27 @@ Response:"""
 
 
 def _call_ollama(prompt):
-    """Call local Ollama model."""
+    """Call local Ollama model via OpenAI-compatible endpoint."""
+    ollama_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
     model = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
-    result = ollama.chat(
-        model=model,
-        messages=[{'role': 'user', 'content': prompt}]
+
+    body = {
+        'model': model,
+        'messages': [{'role': 'user', 'content': prompt}]
+    }
+
+    response = requests.post(
+        f"{ollama_url}/v1/chat/completions",
+        json=body,
+        timeout=120
     )
-    return result['message']['content'], model
+
+    if not response.ok:
+        print(f"Ollama error {response.status_code}: {response.text}")
+
+    response.raise_for_status()
+    data = response.json()
+    return data['choices'][0]['message']['content'], model
 
 
 def _call_goa(prompt):
