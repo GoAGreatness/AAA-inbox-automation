@@ -10,6 +10,19 @@ const API_URL = 'https://localhost:5000';
 let currentResponseId = null;
 let originalResponse = null;
 let currentRating = null;
+let abortController = null;
+
+function stopGeneration() {
+    if (abortController) {
+        abortController.abort();
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && abortController) {
+        stopGeneration();
+    }
+});
 
 /**
  * On page load: check user config, populate UI, auto-generate
@@ -146,18 +159,16 @@ async function generateResponse(subject, senderName, senderEmail, body) {
         style: document.getElementById('styleSelect').value
     };
 
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 1800000); // 30 min
+    abortController = new AbortController();
+    document.getElementById('stopBtn').style.display = 'inline-flex';
 
+    try {
         const response = await fetch(`${API_URL}/api/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(emailData),
-            signal: controller.signal
+            signal: abortController.signal
         });
-
-        clearTimeout(timeout);
 
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
@@ -203,6 +214,8 @@ async function generateResponse(subject, senderName, senderEmail, body) {
             showStatus(`Error: ${error.message}`, 'error');
         }
     } finally {
+        abortController = null;
+        document.getElementById('stopBtn').style.display = 'none';
         btn.disabled = false;
         btn.innerHTML = '&#10024; Regenerate';
         document.getElementById('loadingText').classList.remove('active');

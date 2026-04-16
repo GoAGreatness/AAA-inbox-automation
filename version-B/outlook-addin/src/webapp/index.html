@@ -172,6 +172,18 @@
             box-shadow: 0 4px 12px rgba(0,120,212,0.3);
         }
 
+        .btn-stop {
+            background: #dc3545;
+            color: white;
+            width: auto;
+            padding: 12px 18px;
+            flex-shrink: 0;
+        }
+
+        .btn-stop:hover {
+            background: #b02a37;
+        }
+
         .btn-copy {
             background: #28a745;
             color: white;
@@ -382,6 +394,9 @@
                 rows="2"
                 oninput="saveExtraInstructions()"></textarea>
             <div class="generate-row">
+                <button class="btn btn-stop" id="stopBtn" onclick="stopGeneration()" style="display:none;" title="Stop generation (Esc)">
+                    &#9632; Stop
+                </button>
                 <button class="btn btn-primary btn-generate" id="generateBtn" onclick="generateResponse()">
                     &#10024; Generate Response
                 </button>
