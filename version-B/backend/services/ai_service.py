@@ -221,6 +221,61 @@ def _call_gemini(prompt):
     return data['choices'][0]['message']['content'], model
 
 
+def analyze_edit_diff(generated_response, final_response, user_config=None):
+    """
+    Compare the AI-generated response against the user's edited version.
+    Ask the LLM to extract reusable style preferences from the changes.
+    Returns a list of preference strings (may be empty).
+    """
+    if not generated_response or not final_response:
+        return []
+    if generated_response.strip() == final_response.strip():
+        return []
+
+    provider = os.getenv('AI_PROVIDER', 'gemini')
+    if user_config and user_config.get('ai_provider'):
+        provider = user_config['ai_provider']
+
+    prompt = f"""You are analyzing the difference between an AI-generated email response and the version the user actually sent.
+
+AI-generated version:
+{generated_response}
+
+User's final version:
+{final_response}
+
+Identify up to 5 specific, reusable writing style preferences that explain what the user changed. Focus on style, tone, and structure — not content corrections specific to this email.
+
+Examples of good preferences:
+- "always start with a direct answer, not pleasantries"
+- "avoid using the phrase 'I hope this email finds you well'"
+- "use bullet points when listing multiple items"
+- "keep responses to one paragraph unless the email has multiple questions"
+
+Reply with ONLY a JSON array of short preference strings. No explanation. If no clear style patterns exist, return an empty array [].
+
+Preferences:"""
+
+    try:
+        if provider == 'goa':
+            raw, _ = _call_goa(prompt)
+        elif provider == 'gemini':
+            raw, _ = _call_gemini(prompt)
+        else:
+            raw, _ = _call_ollama(prompt)
+
+        # Extract JSON array from response
+        import json, re
+        match = re.search(r'\[.*?\]', raw, re.DOTALL)
+        if match:
+            preferences = json.loads(match.group())
+            return [p.strip() for p in preferences if isinstance(p, str) and p.strip()]
+    except Exception as e:
+        print(f"Edit diff analysis error (non-blocking): {e}")
+
+    return []
+
+
 def _build_context(similar_emails):
     """Build RAG context string from similar past emails."""
     if not similar_emails:

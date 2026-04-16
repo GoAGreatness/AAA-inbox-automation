@@ -199,6 +199,29 @@
             background: #155724;
         }
 
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%       { transform: translateX(-6px); }
+            40%       { transform: translateX(6px); }
+            60%       { transform: translateX(-4px); }
+            80%       { transform: translateX(4px); }
+        }
+
+        .btn-copy.shake {
+            animation: shake 0.4s ease;
+        }
+
+        .copy-info-icon {
+            margin-left: 6px;
+            font-size: 13px;
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .copy-info-icon:hover {
+            opacity: 1;
+        }
+
         .loading-bar {
             height: 3px;
             background: #e9ecef;
@@ -427,6 +450,7 @@
 
                 <button class="btn btn-copy" id="copyBtn" onclick="copyResponse()">
                     &#128203; Copy to Clipboard
+                    <span class="copy-info-icon" title="Use this button to copy — it logs your feedback so the AI learns your style over time.">&#9432;</span>
                 </button>
 
                 <p class="hint">Copy the response, then paste it into your Outlook reply</p>
