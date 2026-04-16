@@ -48,14 +48,15 @@ def generate_response():
     extra_instructions = data.get('extra_instructions', '')
     style = data.get('style', 'standard')
 
+    user_config = get_user_config()
+    user_preferences = get_user_preferences()
+
     try:
         from services.ai_service import generate_email_response
 
         # Store the incoming email in database
         email_id = store_email(sender_email, sender_name, subject, body)
 
-        user_config = get_user_config()
-        user_preferences = get_user_preferences()
         result = generate_email_response(subject, sender_name, sender_email, body, user_config, user_preferences,
                                          extra_instructions=extra_instructions, style=style)
 
@@ -79,9 +80,8 @@ def generate_response():
         elif isinstance(e, req_lib.exceptions.ConnectionError):
             status_code = 503
 
-        provider = os.getenv('AI_PROVIDER', 'ollama')
-        if data and data.get('ai_provider'):
-            provider = data['ai_provider']
+        # Read provider from saved config, falling back to env var
+        provider = (user_config.get('ai_provider') if user_config else None) or os.getenv('AI_PROVIDER', 'ollama')
 
         return jsonify({
             'error': str(e),
