@@ -141,7 +141,12 @@ async function generateResponse(subject, senderName, senderEmail, body) {
 
         clearTimeout(timeout);
 
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const err = new Error(`API error: ${response.status}`);
+            err.providerData = errData;
+            throw err;
+        }
 
         const result = await response.json();
 
@@ -174,8 +179,8 @@ async function generateResponse(subject, senderName, senderEmail, body) {
             showProviderError('The request timed out. The AI provider may be slow or unreachable. Try again or switch providers in Settings.');
         } else if (error.message.includes('Failed to fetch')) {
             showStatus('Cannot reach backend. Is the server running on port 5000?', 'error');
-        } else if (error.message.includes('500') || error.message.includes('provider')) {
-            showProviderError('The selected AI provider failed to respond. Check your connection or switch to a different provider in Settings.');
+        } else if (error.providerData) {
+            showProviderError(getProviderErrorMessage(error.providerData));
         } else {
             showStatus(`Error: ${error.message}`, 'error');
         }
@@ -367,6 +372,35 @@ function showImportReminder(isFirstTime) {
 function closeImportReminder() {
     document.getElementById('importReminderModal').style.display = 'none';
 }
+
+function getProviderErrorMessage({ provider, status_code }) {
+    const name = {
+        gemini: 'Google Gemini',
+        goa: 'GoA LLM Cluster',
+        ollama: 'Ollama'
+    }[provider] || 'The AI provider';
+
+    if (status_code === 503) {
+        if (provider === 'gemini') {
+            return `Google Gemini is currently experiencing high demand. This is usually temporary — try again in a moment, or switch to a different provider in Settings.`;
+        }
+        return `${name} is temporarily unavailable. Try again shortly or switch providers in Settings.`;
+    }
+    if (status_code === 408) {
+        return `${name} took too long to respond. It may be overloaded or offline. Try again or switch providers in Settings.`;
+    }
+    if (status_code === 401 || status_code === 403) {
+        return `${name} rejected the request — authentication failed. Check your API key in Settings.`;
+    }
+    if (status_code === 404) {
+        return `${name} endpoint not found. The URL or model name may have changed. Check your Settings.`;
+    }
+    if (provider === 'ollama') {
+        return `Ollama failed to respond. Make sure Ollama is running on your machine, then try again.`;
+    }
+    return `${name} failed to respond. Check your connection or switch to a different provider in Settings.`;
+}
+
 
 function showProviderError(message) {
     document.getElementById('providerErrorMsg').textContent = message;
