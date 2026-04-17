@@ -12,6 +12,8 @@
    - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
    - **TODO**: GoA endpoint returning 404 — endpoint URL or model name may have changed. Confirm with boss.
    - **TODO**: Per-model annotation preferences (currently global). Future: allow user to configure per-model in Settings.
+   - **TODO**: Dynamic learned preference count — `analyze_edit_diff()` currently hardcodes "up to 5" preferences. Should ask the LLM to determine how many style patterns are genuinely present in the diff, same way `_determine_rag_depth()` works. Deferred.
+   - **TODO**: Groq free tier token limit — requests with large RAG context (15k+ tokens) exceed both model TPM limits. Fix: (1) Groq-specific RAG depth cap (max 5 emails), (2) truncate past email bodies in context to ~200 chars each. Deferred — workaround is to use shorter emails or switch to Gemini.
    - **TODO**: Clearing user profile should cascade to user_preferences and all associated metadata. Deferred until sessions/profiles are properly implemented.
 5. **Sent Email Import** - ✅ Complete - Import is a standalone VBA button (decoupled from Generate). VBA hands off to background PowerShell script (import_sent.ps1) — no Outlook freeze. Windows toast notification confirms completion. First-run setup shows import reminder before generating. Post-generate reminder fires every 10 generations. RAG badge working.
 6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
@@ -562,6 +564,20 @@ URL params on load and immediately calls the backend to generate a response.
 
 ---
 
+### **New LLM Integration Checklist**
+Every time a new LLM provider is added, complete all items below:
+
+- [ ] Add `_call_<provider>()` to `ai_service.py` (OpenAI-compatible pattern)
+- [ ] Add `elif provider == '<provider>'` to ALL THREE dispatch blocks in `ai_service.py`: `_determine_rag_depth()`, `generate_email_response()`, `analyze_edit_diff()`
+- [ ] Add provider option to both dropdowns in `index.html` (Settings modal + first-run setup)
+- [ ] Add provider name to `getProviderErrorMessage()` name map in `webapp.js`
+- [ ] Add status-code-specific error messages for known failure modes (413 token limit, 503 high demand, 401 auth, 404 endpoint, etc.)
+- [ ] Add `<PROVIDER>_API_KEY` and `<PROVIDER>_MODEL` to `.env.example`
+- [ ] Update `AI_PROVIDER` comment in `.env.example` to include new provider name
+- [ ] Test with the provider selected in Settings — confirm generation, feedback, and edit diff all route correctly (no Ollama fallthrough)
+
+---
+
 ### **Stage 9: GitHub & DevOps Setup** ⏳
 **Goal**: Establish professional SDLC infrastructure
 
@@ -623,6 +639,25 @@ URL params on load and immediately calls the backend to generate a response.
 **Deliverable**: Production-ready Version B accessible to team
 
 **Estimated Time**: TBD
+
+---
+
+### **Stage 13: Resource Optimization** ⏳
+**Goal**: Make the add-in and backend as efficient as possible before wider rollout. Reduce computational overhead, improve perceived performance, and ensure the system is stable under real usage.
+
+**Background**: This stage is intentionally last — optimise only once the product is shippable and real usage patterns are known. Premature optimisation is avoided throughout earlier stages.
+
+**Tasks**:
+- [ ] **Background thread for feedback processing** — ChromaDB indexing + `analyze_edit_diff` LLM call currently run synchronously after Copy. Move to `threading.Thread` (fire-and-forget) so Copy returns instantly. Branch: `version-b-dev--feature--feedback-processing`
+- [ ] **Resource overhead tracking** — log time and memory usage for key operations (generation, RAG lookup, ChromaDB indexing, edit diff analysis). Expose via `/api/stats` and surface on Dashboard.
+- [ ] **ChromaDB embedding performance** — profile `sentence-transformers` embedding time. Evaluate caching or batching strategies if bottlenecks found.
+- [ ] **RAG query optimisation** — profile `find_similar_emails()` at scale. Consider indexing strategies if ChromaDB query time grows.
+- [ ] **Ollama resource spike investigation** — determine whether Ollama is being called unexpectedly during feedback processing. Add logging to confirm call sites.
+- [ ] **Response streaming** (stretch) — stream Gemini/Groq responses token-by-token to the frontend so the user sees text appearing rather than waiting for the full response.
+
+**Design principle**: Measure first, optimise second. Every task here should be informed by actual metrics, not assumptions.
+
+**Branch**: `version-b-dev--feature--resource-optimisation`
 
 ---
 

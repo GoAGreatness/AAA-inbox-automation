@@ -5,6 +5,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
+import threading
+import time
 
 # Load environment variables
 load_dotenv()
@@ -93,12 +95,56 @@ def generate_response():
     return jsonify(response)
 
 
+def _process_feedback_background(response_id, final_response, was_edited, user_rating, user_config):
+    """
+    Heavy feedback processing runs in a background thread so the Copy button
+    returns instantly. Covers ChromaDB indexing + LLM edit diff analysis.
+    Pattern: async fire-and-forget worker thread.
+    """
+    start = time.time()
+
+    # --- ChromaDB indexing (rating gate) ---
+    rated_well = user_rating is not None and user_rating >= 4
+    implicit_approval = user_rating is None and not was_edited
+    if rated_well or implicit_approval:
+        try:
+            t0 = time.time()
+            email_data = get_email_by_response_id(response_id)
+            if email_data and final_response:
+                vector_id = f"approved-{response_id}"
+                add_sent_email(
+                    email_id=vector_id,
+                    subject=email_data['subject'],
+                    original_body=email_data['body'],
+                    reply_body=final_response
+                )
+            print(f"[feedback] ChromaDB indexing: {int((time.time() - t0) * 1000)}ms")
+        except Exception as e:
+            print(f"[feedback] ChromaDB indexing error: {e}")
+
+    # --- Edit diff analysis (LLM call) ---
+    if was_edited and final_response:
+        try:
+            t0 = time.time()
+            from services.ai_service import analyze_edit_diff
+            email_data = get_email_by_response_id(response_id)
+            generated_response = email_data.get('generated_response') if email_data else None
+            learned = analyze_edit_diff(generated_response, final_response, user_config)
+            if learned:
+                save_user_preferences(learned)
+            print(f"[feedback] Edit diff analysis: {int((time.time() - t0) * 1000)}ms — learned {len(learned) if learned else 0} preference(s)")
+        except Exception as e:
+            print(f"[feedback] Edit diff analysis error: {e}")
+
+    print(f"[feedback] Total background processing: {int((time.time() - start) * 1000)}ms")
+
+
 @app.route('/api/feedback', methods=['POST'])
 def store_feedback():
     """
-    Store feedback and auto-learn from approved responses.
-    This is the Feedback Loop - approved responses get added to the
-    vector store so future generations learn from them.
+    Store feedback and kick off background processing.
+    Fast DB writes happen synchronously; heavy work (ChromaDB + LLM) runs
+    in a background thread so the response returns immediately.
     """
     data = request.get_json()
 
@@ -109,51 +155,23 @@ def store_feedback():
     edit_notes = data.get('edit_notes', '')
     annotations = data.get('annotations', [])
 
-    # Store feedback in database
+    # Fast: store feedback + annotations synchronously
     db_store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
-
-    # Save any [[annotation]] notes extracted by the frontend
     if annotations:
         save_user_preferences(annotations)
 
-    # Edit diff analysis: if the user edited the response, ask the LLM what style patterns it can extract
-    if was_edited and final_response:
-        try:
-            from services.ai_service import analyze_edit_diff
-            email_data = get_email_by_response_id(response_id)
-            generated_response = email_data.get('generated_response') if email_data else None
-            user_config = get_user_config()
-            learned = analyze_edit_diff(generated_response, final_response, user_config)
-            if learned:
-                save_user_preferences(learned)
-                print(f"Edit diff analysis: learned {len(learned)} preference(s)")
-        except Exception as e:
-            print(f"Edit diff analysis error (non-blocking): {e}")
-
-    # Auto-learn: add approved response to vector store only if quality threshold met.
-    # Index if: rated >= 4, OR unrated and not edited (implicit approval).
-    # Don't index: rated <= 3, or unrated + edited (quality unknown).
-    rated_well = user_rating is not None and user_rating >= 4
-    implicit_approval = user_rating is None and not was_edited
-    should_index = rated_well or implicit_approval
-
-    if should_index:
-        try:
-            email_data = get_email_by_response_id(response_id)
-            if email_data and final_response:
-                vector_id = f"approved-{response_id}"
-                add_sent_email(
-                    email_id=vector_id,
-                    subject=email_data['subject'],
-                    original_body=email_data['body'],
-                    reply_body=final_response
-                )
-        except Exception as e:
-            print(f"Auto-learn error (non-blocking): {e}")
+    # Heavy: ChromaDB indexing + LLM diff analysis in background thread
+    user_config = get_user_config()
+    thread = threading.Thread(
+        target=_process_feedback_background,
+        args=(response_id, final_response, was_edited, user_rating, user_config),
+        daemon=True
+    )
+    thread.start()
 
     return jsonify({
         'success': True,
-        'message': 'Feedback stored and response added to knowledge base'
+        'message': 'Feedback stored'
     })
 
 
