@@ -3,7 +3,6 @@ AI Service - Handles communication with Ollama, GoA LLM cluster, or Google Gemin
 Uses RAG (Retrieval Augmented Generation) to find similar past emails
 and feed them as context to improve response quality.
 """
-import ollama
 import requests
 import time
 import os
@@ -33,6 +32,8 @@ Reply with ONLY a single integer between {RAG_MIN} and {RAG_MAX}. No explanation
             raw, _ = _call_goa(prompt)
         elif provider == 'gemini':
             raw, _ = _call_gemini(prompt)
+        elif provider == 'groq':
+            raw, _ = _call_groq(prompt)
         else:
             raw, _ = _call_ollama(prompt)
 
@@ -128,6 +129,8 @@ Response:"""
         response_text, model_name = _call_goa(prompt)
     elif provider == 'gemini':
         response_text, model_name = _call_gemini(prompt)
+    elif provider == 'groq':
+        response_text, model_name = _call_groq(prompt)
     else:
         response_text, model_name = _call_ollama(prompt)
 
@@ -221,6 +224,42 @@ def _call_gemini(prompt):
     return data['choices'][0]['message']['content'], model
 
 
+def _call_groq(prompt):
+    """Call Groq via OpenAI-compatible API. Falls back to 8b-instant if 70b-versatile hits token limits."""
+    api_key = os.getenv('GROQ_API_KEY', '')
+    primary_model = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+    fallback_model = 'llama-3.1-8b-instant'
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+
+    for model in [primary_model, fallback_model]:
+        body = {
+            'model': model,
+            'messages': [{'role': 'user', 'content': prompt}]
+        }
+
+        response = requests.post(
+            'https://api.groq.com/openai/v1/chat/completions',
+            headers=headers,
+            json=body,
+            timeout=60
+        )
+
+        if response.status_code == 413 and model == primary_model:
+            print(f"Groq 413 on {primary_model} — retrying with {fallback_model}")
+            continue
+
+        if not response.ok:
+            print(f"Groq API error {response.status_code}: {response.text}")
+
+        response.raise_for_status()
+        data = response.json()
+        return data['choices'][0]['message']['content'], model
+
+
 def analyze_edit_diff(generated_response, final_response, user_config=None):
     """
     Compare the AI-generated response against the user's edited version.
@@ -261,6 +300,8 @@ Preferences:"""
             raw, _ = _call_goa(prompt)
         elif provider == 'gemini':
             raw, _ = _call_gemini(prompt)
+        elif provider == 'groq':
+            raw, _ = _call_groq(prompt)
         else:
             raw, _ = _call_ollama(prompt)
 

@@ -407,10 +407,17 @@ function closeImportReminder() {
 function getProviderErrorMessage({ provider, status_code }) {
     const name = {
         gemini: 'Google Gemini',
+        groq: 'Groq',
         goa: 'GoA LLM Cluster',
         ollama: 'Ollama'
     }[provider] || 'The AI provider';
 
+    if (status_code === 413) {
+        return `Your request was too large for ${name}'s free tier token limit. Try again with a shorter email, or switch to a different provider in Settings.`;
+    }
+    if (status_code === 429) {
+        return `${name} rate limit reached. Wait a moment and try again, or switch to a different provider in Settings.`;
+    }
     if (status_code === 503) {
         if (provider === 'gemini') {
             return `Google Gemini is currently experiencing high demand. This is usually temporary — try again in a moment, or switch to a different provider in Settings.`;
