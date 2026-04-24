@@ -8,6 +8,7 @@
    - **TODO**: Dynamic RAG context depth — currently fixed at 15 (bumped from 12, 2026-03-11). Future: LLM-driven selection — pre-prompt asks model to assess email complexity and return a count, then that count drives `find_similar_emails()`. Planned for branch `version-b-dev--feature--information-processing`.
    - **Bug**: "Always include signature" checkbox unchecking does not persist — `use_signature` not saving correctly. Fix in dedicated branch.
    - **Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing. Only the annotation text should be removed, formatting should be preserved. Fix in dedicated branch.
+   - **Bug**: Clicking "Stop" during generation shows a provider error popup — should silently stop with no message. Fix: check for `AbortError` and return cleanly without calling `showProviderError()`.
 4. **AI Provider Options** - ✅ Complete - Gemini (default), GoA LLM cluster, and Ollama all integrated (2026-04-10). User selects provider in Settings modal + first-run setup. Gemini uses Google's OpenAI-compatible endpoint (gemini-2.0-flash, free tier 1500 req/day). Error handling improved — provider failures now show a persistent modal popup with "Open Settings" shortcut instead of dumping error text into the response box.
    - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
    - **TODO**: GoA endpoint returning 404 — endpoint URL or model name may have changed. Confirm with boss.
