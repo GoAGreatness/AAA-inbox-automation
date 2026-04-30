@@ -144,7 +144,7 @@
             font-family: inherit;
             font-size: 13px;
             color: #222;
-            resize: none;
+            resize: vertical;
             transition: border-color 0.15s;
             margin-bottom: 10px;
             min-height: 48px;
@@ -207,19 +207,40 @@
             80%       { transform: translateX(4px); }
         }
 
-        .btn-copy.shake {
+        .btn-copy .copy-btn-label.shake {
+            display: inline-block;
             animation: shake 0.4s ease;
         }
 
-        .copy-info-icon {
-            margin-left: 6px;
-            font-size: 13px;
-            opacity: 0.7;
-            cursor: default;
+        .btn-copy {
+            position: relative;
         }
 
-        .copy-info-icon:hover {
+        .btn-copy::after {
+            content: "Use this button to copy — it logs your feedback so the AI learns your style over time.";
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 230px;
+            background: #333;
+            color: #fff;
+            font-size: 12px;
+            font-weight: normal;
+            padding: 7px 10px;
+            border-radius: 6px;
+            line-height: 1.4;
+            z-index: 100;
+            pointer-events: none;
+            white-space: normal;
+            opacity: 0;
+            transition: opacity 0s;
+            transition-delay: 0s;
+        }
+
+        .btn-copy:hover::after {
             opacity: 1;
+            transition-delay: 0.7s;
         }
 
         .loading-bar {
@@ -449,8 +470,7 @@
                 </p>
 
                 <button class="btn btn-copy" id="copyBtn" onclick="copyResponse()">
-                    &#128203; Copy to Clipboard
-                    <span class="copy-info-icon" title="Use this button to copy — it logs your feedback so the AI learns your style over time.">&#9432;</span>
+                    <span class="copy-btn-label">&#128203; Copy to Clipboard &#8505;&#65039;</span>
                 </button>
 
                 <p class="hint">Copy the response, then paste it into your Outlook reply</p>

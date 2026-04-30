@@ -205,7 +205,8 @@ async function generateResponse(subject, senderName, senderEmail, body) {
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            showProviderError('The request timed out. The AI provider may be slow or unreachable. Try again or switch providers in Settings.');
+            // Silently cancelled — user clicked Stop or Esc, no message needed
+            return;
         } else if (error.message.includes('Failed to fetch')) {
             showStatus('Cannot reach backend. Is the server running on port 5000?', 'error');
         } else if (error.providerData) {
@@ -315,7 +316,7 @@ async function openSettings() {
         document.getElementById('settingsName').value = config.full_name || '';
         document.getElementById('settingsRole').value = config.role || '';
         document.getElementById('settingsSignature').value = config.signature || '';
-        document.getElementById('settingsUseSig').checked = config.use_signature !== false;
+        document.getElementById('settingsUseSig').checked = config.use_signature === 1 || config.use_signature === true;
         document.getElementById('settingsSharedMailbox').value = config.shared_mailbox_name || '';
         document.getElementById('settingsAutoGenerate').checked = config.auto_generate === 1 || config.auto_generate === true;
         document.getElementById('settingsAiProvider').value = config.ai_provider || 'gemini';
@@ -469,14 +470,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyBtn = document.getElementById('copyBtn');
 
     if (responseBox && copyBtn) {
+        const copyLabel = copyBtn.querySelector('.copy-btn-label');
         responseBox.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'c') {
-                copyBtn.classList.remove('shake');
-                // Force reflow so re-triggering the animation works
-                void copyBtn.offsetWidth;
-                copyBtn.classList.add('shake');
-                copyBtn.addEventListener('animationend', () => {
-                    copyBtn.classList.remove('shake');
+            if (e.ctrlKey && e.key === 'c' && copyLabel) {
+                copyLabel.classList.remove('shake');
+                void copyLabel.offsetWidth;
+                copyLabel.classList.add('shake');
+                copyLabel.addEventListener('animationend', () => {
+                    copyLabel.classList.remove('shake');
                 }, { once: true });
             }
         });
