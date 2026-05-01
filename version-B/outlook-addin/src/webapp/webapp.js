@@ -147,7 +147,6 @@ async function generateResponse(subject, senderName, senderEmail, body) {
     // Show loading animation
     document.getElementById('loadingText').classList.add('active');
     document.getElementById('loadingBar').classList.add('active');
-    document.getElementById('responseSection').classList.remove('visible');
     hideStatus();
 
     const emailData = {
