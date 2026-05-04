@@ -6,9 +6,10 @@
 2. **Shared Mailbox** - ✅ Fixed - VBA macro reads shared mailbox emails correctly (tested 2026-02-24)
 3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
    - **TODO**: Dynamic RAG context depth — currently fixed at 15 (bumped from 12, 2026-03-11). Future: LLM-driven selection — pre-prompt asks model to assess email complexity and return a count, then that count drives `find_similar_emails()`. Planned for branch `version-b-dev--feature--information-processing`.
-   - **Bug**: "Always include signature" checkbox unchecking does not persist — `use_signature` not saving correctly. Fix in dedicated branch.
-   - **Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing. Only the annotation text should be removed, formatting should be preserved. Fix in dedicated branch.
-   - **Bug**: Clicking "Stop" during generation shows a provider error popup — should silently stop with no message. Fix: check for `AbortError` and return cleanly without calling `showProviderError()`.
+   - ~~**Bug**: "Always include signature" checkbox unchecking does not persist~~ ✅ Fixed 2026-04-30
+   - ~~**Bug**: On regeneration, if an error occurs, the previously generated response disappears~~ ✅ Fixed 2026-04-30
+   - ~~**Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing~~ ✅ Fixed (annotation regex preserves formatting)
+   - ~~**Bug**: Clicking "Stop" during generation shows a provider error popup~~ ✅ Fixed 2026-04-30
 4. **AI Provider Options** - ✅ Complete - Gemini (default), GoA LLM cluster, and Ollama all integrated (2026-04-10). User selects provider in Settings modal + first-run setup. Gemini uses Google's OpenAI-compatible endpoint (gemini-2.0-flash, free tier 1500 req/day). Error handling improved — provider failures now show a persistent modal popup with "Open Settings" shortcut instead of dumping error text into the response box.
    - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
    - **TODO**: GoA endpoint returning 404 — endpoint URL or model name may have changed. Confirm with boss.
@@ -21,7 +22,7 @@
 7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
 8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
 9. **Annotation-Based Preference Learning** - ✅ Complete - Users add `[[notes]]` in edited responses. Frontend extracts + strips them before copying. Annotations sent to backend, stored in `user_preferences` table (deduped). AI prompt includes all stored preferences on every generation.
-   - **TODO**: Allow user to view, edit, and remove individual stored annotations in the Settings modal.
+   - **TODO**: Allow user to view, edit, and remove individual stored annotations — moved to Dashboard (Stage 8b, "What I've Learned" panel).
    - **TODO**: Allow user to select which annotations are directly relevant before generating a response (per-generation annotation filtering).
 10. **User Documentation Page** - Static page (with dropdowns/accordions) explaining all add-in features and how to use them. Linked from the web app footer. (SWE term: User Guide / Product Docs)
 11. **External Input Text Box** - A text box in the UI allowing users to provide additional context/instructions before generation (e.g. "focus on the third question only", "keep it under 3 sentences"). Injected into the prompt alongside annotations and RAG context.
