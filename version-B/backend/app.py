@@ -15,7 +15,7 @@ app = Flask(__name__)
 
 # Initialize database on startup
 from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config, save_user_preferences, get_user_preferences, get_all_preferences, delete_preference, get_learning_stats
-from services.vector_service import add_sent_email, get_collection_count
+from services.vector_service import add_sent_email, get_collection_count, clear_collection
 from services.thread_parser import parse_thread
 init_database()
 
@@ -272,6 +272,16 @@ def learning_stats():
     """Get time-series stats for dashboard charts (rating trend, daily generation counts)."""
     stats = get_learning_stats()
     return jsonify(stats)
+
+
+@app.route('/api/clear-knowledge-base', methods=['POST'])
+def clear_knowledge_base():
+    """Delete all indexed emails from ChromaDB. Irreversible."""
+    try:
+        clear_collection()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':

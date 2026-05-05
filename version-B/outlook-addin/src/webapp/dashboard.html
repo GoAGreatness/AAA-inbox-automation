@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Email Response Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: #0078d4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .back-btn {
+            background: none;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .back-btn:hover {
+            border-color: #0078d4;
+            color: #0078d4;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        /* Stat rows */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 14px 16px;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #0078d4;
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* Provider status */
+        .provider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .provider-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .provider-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #222;
+        }
+
+        .provider-sub {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+            flex-shrink: 0;
+        }
+
+        .status-dot.online { background: #28a745; }
+        .status-dot.offline { background: #dc3545; }
+        .status-dot.checking {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #888;
+            margin-left: 8px;
+        }
+
+        /* Preference chips */
+        .chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e8f4fd;
+            color: #0078d4;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .chip-delete {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #0078d4;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0;
+            width: auto;
+            opacity: 0.6;
+            transition: opacity 0.1s;
+        }
+
+        .chip-delete:hover {
+            opacity: 1;
+        }
+
+        .empty-state {
+            font-size: 13px;
+            color: #aaa;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* Chart */
+        .chart-wrap {
+            position: relative;
+            height: 180px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn-danger:hover {
+            background: #f5c6cb;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div class="header-icon">&#9733;</div>
+            <div style="flex:1;">
+                <h1>Dashboard</h1>
+                <p>What your AI assistant has learned and how it's performing</p>
+            </div>
+            <a href="index.html" class="back-btn">&#8592; Back</a>
+        </div>
+
+        <!-- Knowledge Base Health -->
+        <div class="card">
+            <div class="card-title">Knowledge Base Health</div>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="vectorCount">—</div>
+                    <div class="stat-label">Emails indexed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalGenerated">—</div>
+                    <div class="stat-label">Responses generated</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- What I've Learned -->
+        <div class="card">
+            <div class="card-title">What I've Learned</div>
+            <div id="chipList" class="chip-list">
+                <div class="empty-state">Loading preferences...</div>
+            </div>
+        </div>
+
+        <!-- Writing Stats -->
+        <div class="card">
+            <div class="card-title">Your Writing Stats</div>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="avgRating">—</div>
+                    <div class="stat-label">Avg rating</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="editRate">—</div>
+                    <div class="stat-label">Edit rate</div>
+                </div>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="ratingChart"></canvas>
+            </div>
+        </div>
+
+        <!-- AI Provider Status -->
+        <div class="card">
+            <div class="card-title">AI Provider Status</div>
+            <div id="providerStatus">
+                <div class="provider-row">
+                    <div>
+                        <div class="provider-name" id="providerName">Checking...</div>
+                        <div class="provider-sub" id="providerSub"></div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <div class="status-dot checking" id="statusDot"></div>
+                        <span class="status-label" id="statusLabel">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-title">Quick Actions</div>
+            <div class="quick-actions">
+                <button class="btn btn-danger" onclick="confirmClearKnowledgeBase()">
+                    &#128465; Clear Knowledge Base
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
