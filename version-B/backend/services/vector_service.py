@@ -78,3 +78,13 @@ def find_similar_emails(subject, body, n_results=15):
 def get_collection_count():
     """Return how many emails are in the vector store."""
     return sent_emails_collection.count()
+
+
+def clear_collection():
+    """Delete and recreate the sent_emails collection, removing all indexed emails."""
+    global sent_emails_collection
+    client.delete_collection("sent_emails")
+    sent_emails_collection = client.get_or_create_collection(
+        name="sent_emails",
+        embedding_function=embedding_fn
+    )
