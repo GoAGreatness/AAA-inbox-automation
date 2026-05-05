@@ -6,6 +6,7 @@
 2. **Shared Mailbox** - ✅ Fixed - VBA macro reads shared mailbox emails correctly (tested 2026-02-24)
 3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
    - **TODO**: Dynamic RAG context depth — currently fixed at 15 (bumped from 12, 2026-03-11). Future: LLM-driven selection — pre-prompt asks model to assess email complexity and return a count, then that count drives `find_similar_emails()`. Planned for branch `version-b-dev--feature--information-processing`.
+   - **TODO**: Add a "Save" button to the left of the "Generate Response" button — saves the Extra Instructions textarea and Style dropdown values immediately on click, so the user can explicitly persist their generation preferences without having to generate first.
    - ~~**Bug**: "Always include signature" checkbox unchecking does not persist~~ ✅ Fixed 2026-04-30
    - ~~**Bug**: On regeneration, if an error occurs, the previously generated response disappears~~ ✅ Fixed 2026-04-30
    - ~~**Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing~~ ✅ Fixed (annotation regex preserves formatting)
