@@ -277,6 +277,49 @@ def get_user_preferences():
     return [row['note'] for row in rows]
 
 
+def get_all_preferences():
+    """Get all preferences with IDs for the dashboard preference manager."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, note, created_at FROM user_preferences ORDER BY created_at ASC')
+    rows = cursor.fetchall()
+    conn.close()
+    return [{'id': row['id'], 'note': row['note'], 'created_at': row['created_at']} for row in rows]
+
+
+def delete_preference(preference_id):
+    """Delete a single preference by ID."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM user_preferences WHERE id = ?', (preference_id,))
+    deleted = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return deleted > 0
+
+
+def get_learning_stats():
+    """Get time-series data for dashboard charts — rating trend and daily generation counts."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Avg rating per day over last 14 days
+    cursor.execute('''
+        SELECT DATE(created_at) as day, AVG(user_rating) as avg_rating, COUNT(*) as count
+        FROM responses
+        WHERE created_at >= DATE('now', '-14 days')
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    ''')
+    daily_rows = cursor.fetchall()
+
+    conn.close()
+
+    return {
+        'daily': [{'day': r['day'], 'avg_rating': round(r['avg_rating'], 1) if r['avg_rating'] else None, 'generated_count': r['count']} for r in daily_rows]
+    }
+
+
 def get_sent_emails(limit=50):
     """Get historical sent emails for RAG context. Legacy - data now lives in ChromaDB."""
     conn = get_connection()
