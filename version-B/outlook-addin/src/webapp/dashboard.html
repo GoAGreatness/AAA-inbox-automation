@@ -167,10 +167,53 @@
         }
 
         /* Preference chips */
+        .chip-list-wrap {
+            position: relative;
+        }
+
         .chip-list {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+            max-height: 120px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .chip-list.expanded {
+            max-height: 2000px;
+        }
+
+        .chip-fade {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: linear-gradient(transparent, white);
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .chip-fade.hidden {
+            opacity: 0;
+        }
+
+        .show-more-btn {
+            margin-top: 10px;
+            background: none;
+            border: none;
+            color: #0078d4;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            display: none;
+        }
+
+        .show-more-btn:hover {
+            text-decoration: underline;
         }
 
         .chip {
@@ -239,6 +282,66 @@
             background: #f5c6cb;
         }
 
+        .btn-danger-solid {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger-solid:hover:not(:disabled) {
+            background: #b02a37;
+        }
+
+        .btn-danger-solid:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .btn-success:hover {
+            background: #c3e6cb;
+        }
+
+        .delete-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-align: center;
+            color: #dc3545;
+            margin: 16px 0;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .delete-input:focus {
+            box-shadow: 0 0 0 3px rgba(220,53,69,0.2);
+        }
+
+        .btn-recycle {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .btn-recycle:hover {
+            background: #ffeaa7;
+        }
+
         .quick-actions {
             display: flex;
             gap: 10px;
@@ -273,14 +376,6 @@
             </div>
         </div>
 
-        <!-- What I've Learned -->
-        <div class="card">
-            <div class="card-title">What I've Learned</div>
-            <div id="chipList" class="chip-list">
-                <div class="empty-state">Loading preferences...</div>
-            </div>
-        </div>
-
         <!-- Writing Stats -->
         <div class="card">
             <div class="card-title">Your Writing Stats</div>
@@ -297,6 +392,18 @@
             <div class="chart-wrap">
                 <canvas id="ratingChart"></canvas>
             </div>
+        </div>
+
+        <!-- What I've Learned -->
+        <div class="card">
+            <div class="card-title">What I've Learned</div>
+            <div class="chip-list-wrap">
+                <div id="chipList" class="chip-list">
+                    <div class="empty-state">Loading preferences...</div>
+                </div>
+                <div id="chipFade" class="chip-fade hidden"></div>
+            </div>
+            <button id="showMoreBtn" class="show-more-btn" onclick="toggleChipList()"></button>
         </div>
 
         <!-- AI Provider Status -->
@@ -320,12 +427,58 @@
         <div class="card">
             <div class="card-title">Quick Actions</div>
             <div class="quick-actions">
+                <button class="btn btn-recycle" onclick="openRecycleBin()">
+                    &#9851; Recycle Bin
+                </button>
                 <button class="btn btn-danger" onclick="confirmClearKnowledgeBase()">
                     &#128465; Clear Knowledge Base
                 </button>
             </div>
         </div>
 
+    </div>
+
+    <!-- Recycle Bin Modal -->
+    <div id="recycleBinModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:480px; width:90%; margin:auto; max-height:80vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <h2 style="color:#1a1a2e; font-size:18px; margin:0;">&#9851; Recycle Bin</h2>
+                <button onclick="closeRecycleBin()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#888; width:auto; padding:0;">&#10005;</button>
+            </div>
+            <p style="font-size:13px; color:#888; margin-bottom:16px;">Deleted preferences — restore any you want the AI to use again.</p>
+            <div id="recycleBinList" style="overflow-y:auto; flex:1; margin-bottom:16px;">
+                <div class="empty-state">Loading...</div>
+            </div>
+            <button id="restoreAllBtn" class="btn btn-success" onclick="restoreAllPreferences()" style="width:100%; display:none;">
+                &#8617; Restore All
+            </button>
+        </div>
+    </div>
+
+    <!-- Clear Knowledge Base Confirmation Modal -->
+    <div id="clearKbModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.75); z-index:1100; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:32px; max-width:440px; width:90%; margin:auto;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:48px; line-height:1;">&#128465;</div>
+                <h2 style="color:#dc3545; font-size:20px; margin:12px 0 8px 0;">Delete Knowledge Base?</h2>
+                <p style="font-size:13px; color:#555; line-height:1.6;">
+                    This will permanently delete all <strong id="kbCountText">indexed emails</strong> from the vector store.
+                    The AI will lose all context from past emails and will generate generic responses until you re-import.
+                    <strong>This cannot be undone.</strong>
+                </p>
+            </div>
+            <p style="font-size:12px; color:#888; text-align:center; margin-bottom:4px;">Type <strong style="color:#dc3545; letter-spacing:1px;">DELETE</strong> to confirm</p>
+            <input type="text" id="deleteConfirmInput" class="delete-input" placeholder="DELETE"
+                   oninput="onDeleteInputChange()" autocomplete="off" spellcheck="false" />
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="btn btn-secondary" onclick="closeClearKbModal()" style="flex:1;">Cancel</button>
+                <button class="btn btn-danger-solid" id="confirmDeleteBtn" onclick="executeClearKnowledgeBase()" style="flex:1;" disabled>
+                    Delete Everything
+                </button>
+            </div>
+        </div>
     </div>
 
     <script src="dashboard.js"></script>

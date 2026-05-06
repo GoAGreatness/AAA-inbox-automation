@@ -47,9 +47,37 @@ async function loadPreferences() {
             `;
             container.appendChild(chip);
         });
+
+        // Show/hide "Show more" button based on whether content overflows
+        updateShowMoreBtn(prefs.length);
     } catch (e) {
         container.innerHTML = '<div class="empty-state">Could not load preferences.</div>';
     }
+}
+
+function updateShowMoreBtn(total) {
+    const container = document.getElementById('chipList');
+    const btn = document.getElementById('showMoreBtn');
+    const fade = document.getElementById('chipFade');
+
+    const overflows = container.scrollHeight > container.clientHeight + 4;
+    const isExpanded = container.classList.contains('expanded');
+
+    if (overflows || isExpanded) {
+        btn.style.display = 'block';
+        btn.textContent = isExpanded ? 'Show less' : `Show all (${total})`;
+        fade.classList.toggle('hidden', isExpanded);
+    } else {
+        btn.style.display = 'none';
+        fade.classList.add('hidden');
+    }
+}
+
+function toggleChipList() {
+    const container = document.getElementById('chipList');
+    const chips = container.querySelectorAll('.chip');
+    container.classList.toggle('expanded');
+    updateShowMoreBtn(chips.length);
 }
 
 async function deletePreference(id, btn) {
@@ -191,19 +219,116 @@ async function loadProviderStatus() {
     }
 }
 
-async function confirmClearKnowledgeBase() {
-    const confirmed = confirm('This will permanently delete all indexed emails from the knowledge base. The AI will lose all context from past emails.\n\nAre you sure?');
-    if (!confirmed) return;
+async function openRecycleBin() {
+    document.getElementById('recycleBinModal').style.display = 'flex';
+    const container = document.getElementById('recycleBinList');
+    container.innerHTML = '<div class="empty-state">Loading...</div>';
 
+    try {
+        const res = await fetch(`${API_URL}/api/preferences/deleted`);
+        const prefs = await res.json();
+
+        if (!prefs.length) {
+            container.innerHTML = '<div class="empty-state">Recycle bin is empty.</div>';
+            document.getElementById('restoreAllBtn').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('restoreAllBtn').style.display = 'block';
+        container.innerHTML = '';
+        prefs.forEach(pref => {
+            const row = document.createElement('div');
+            row.dataset.id = pref.id;
+            row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f0f0f0;';
+            row.innerHTML = `
+                <span style="font-size:13px; color:#444; flex:1; margin-right:12px;">${pref.note}</span>
+                <button onclick="restorePreference(${pref.id}, this)"
+                    style="background:#d4edda; color:#155724; border:none; border-radius:6px; padding:6px 12px;
+                           font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; width:auto;">
+                    &#8617; Restore
+                </button>
+            `;
+            container.appendChild(row);
+        });
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state">Could not load recycle bin.</div>';
+    }
+}
+
+function closeRecycleBin() {
+    document.getElementById('recycleBinModal').style.display = 'none';
+}
+
+async function restoreAllPreferences() {
+    const rows = document.querySelectorAll('#recycleBinList [data-id]');
+    const ids = Array.from(rows).map(r => r.dataset.id);
+    if (!ids.length) return;
+
+    await Promise.all(ids.map(id =>
+        fetch(`${API_URL}/api/preferences/${id}/restore`, { method: 'POST' }).catch(() => {})
+    ));
+
+    document.getElementById('recycleBinList').innerHTML = '<div class="empty-state">Recycle bin is empty.</div>';
+    document.getElementById('restoreAllBtn').style.display = 'none';
+    await loadPreferences();
+}
+
+async function restorePreference(id, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Restoring...';
+    try {
+        const res = await fetch(`${API_URL}/api/preferences/${id}/restore`, { method: 'POST' });
+        if (res.ok) {
+            // Remove from recycle bin list
+            const row = document.querySelector(`#recycleBinList [data-id="${id}"]`);
+            if (row) row.remove();
+
+            // Check if bin is now empty
+            const remaining = document.querySelectorAll('#recycleBinList [data-id]');
+            if (!remaining.length) {
+                document.getElementById('recycleBinList').innerHTML = '<div class="empty-state">Recycle bin is empty.</div>';
+            }
+
+            // Refresh the chip list on the dashboard
+            await loadPreferences();
+        }
+    } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '↩ Restore';
+    }
+}
+
+function confirmClearKnowledgeBase() {
+    // Show count in modal text
+    const count = document.getElementById('vectorCount').textContent;
+    const countText = count && count !== '—' ? `all ${count} indexed emails` : 'all indexed emails';
+    document.getElementById('kbCountText').textContent = countText;
+
+    // Reset input and button state
+    document.getElementById('deleteConfirmInput').value = '';
+    document.getElementById('confirmDeleteBtn').disabled = true;
+
+    document.getElementById('clearKbModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('deleteConfirmInput').focus(), 100);
+}
+
+function closeClearKbModal() {
+    document.getElementById('clearKbModal').style.display = 'none';
+}
+
+function onDeleteInputChange() {
+    const val = document.getElementById('deleteConfirmInput').value;
+    document.getElementById('confirmDeleteBtn').disabled = val !== 'DELETE';
+}
+
+async function executeClearKnowledgeBase() {
+    closeClearKbModal();
     try {
         const res = await fetch(`${API_URL}/api/clear-knowledge-base`, { method: 'POST' });
         if (res.ok) {
             document.getElementById('vectorCount').textContent = '0';
-            alert('Knowledge base cleared.');
-        } else {
-            alert('Failed to clear knowledge base.');
         }
     } catch (e) {
-        alert('Could not reach the backend.');
+        console.error('Failed to clear knowledge base:', e);
     }
 }
