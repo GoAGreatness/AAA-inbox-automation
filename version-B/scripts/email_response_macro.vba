@@ -15,7 +15,8 @@
 '   3. Under "Choose commands from", select "Macros"
 '   4. Add "Project.ThisOutlookSession.GenerateEmailResponse"
 '   5. Add "Project.ThisOutlookSession.ImportSentEmails"
-'   6. Click OK
+'   6. Add "Project.ThisOutlookSession.OpenDashboard"
+'   7. Click OK
 '
 ' HOW TO USE:
 '   1. Click "Import Sent Emails" button first (first time, and periodically)
@@ -216,6 +217,18 @@ Sub ImportSentEmails()
 ImportError:
     MsgBox "Import failed. Make sure the backend server is running on port 5000.", vbExclamation, "Import Error"
     Exit Sub
+
+End Sub
+
+
+' ------------------------------------------------------------
+' Open Dashboard in Chrome
+' ------------------------------------------------------------
+Sub OpenDashboard()
+
+    Dim objShell As Object
+    Set objShell = CreateObject("WScript.Shell")
+    objShell.Run "cmd /c start chrome ""https://localhost:3000/src/webapp/dashboard.html""", 0, False
 
 End Sub
 
