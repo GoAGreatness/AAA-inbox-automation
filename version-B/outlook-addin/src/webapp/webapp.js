@@ -42,8 +42,33 @@ function restoreGenerationPreferences() {
     document.getElementById('styleSelect').value = style;
 }
 
+function onLearningToggle() {
+    const on = document.getElementById('learningToggle').checked;
+    const label = document.getElementById('learningState');
+    label.textContent = on ? 'On' : 'Off';
+    label.classList.toggle('off', !on);
+    localStorage.setItem('learningEnabled', on ? '1' : '0');
+}
+
+function getLearningEnabled() {
+    const stored = localStorage.getItem('learningEnabled');
+    return stored === null ? true : stored === '1';
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
     restoreGenerationPreferences();
+
+    // Restore learning toggle state
+    const learningOn = getLearningEnabled();
+    const toggle = document.getElementById('learningToggle');
+    const label = document.getElementById('learningState');
+    if (toggle) {
+        toggle.checked = learningOn;
+        if (label) {
+            label.textContent = learningOn ? 'On' : 'Off';
+            label.classList.toggle('off', !learningOn);
+        }
+    }
     const params = new URLSearchParams(window.location.search);
 
     const subject = params.get('subject') || '';
@@ -299,7 +324,8 @@ function sendFeedback(annotations = []) {
             was_edited: wasEdited,
             user_rating: currentRating || null,
             edit_notes: wasEdited ? 'User edited response' : '',
-            annotations: annotations
+            annotations: annotations,
+            learning_enabled: getLearningEnabled()
         })
     }).catch(err => console.error('Feedback error:', err));
 }
