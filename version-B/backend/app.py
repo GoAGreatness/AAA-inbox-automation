@@ -14,8 +14,8 @@ load_dotenv()
 app = Flask(__name__)
 
 # Initialize database on startup
-from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config, save_user_preferences, get_user_preferences
-from services.vector_service import add_sent_email, get_collection_count
+from services.database_service import init_database, store_email, store_response, store_feedback as db_store_feedback, get_stats as db_get_stats, get_email_by_response_id, get_user_config, save_user_config, save_user_preferences, get_user_preferences, get_all_preferences, delete_preference, get_deleted_preferences, restore_preference, get_learning_stats
+from services.vector_service import add_sent_email, get_collection_count, clear_collection
 from services.thread_parser import parse_thread
 init_database()
 
@@ -249,6 +249,55 @@ def get_stats():
     stats = db_get_stats()
     stats['vector_store_count'] = get_collection_count()
     return jsonify(stats)
+
+
+@app.route('/api/preferences', methods=['GET'])
+def get_preferences():
+    """Get all stored user preferences with IDs for the dashboard."""
+    prefs = get_all_preferences()
+    return jsonify(prefs)
+
+
+@app.route('/api/preferences/<int:preference_id>', methods=['DELETE'])
+def remove_preference(preference_id):
+    """Soft delete a single user preference by ID."""
+    success = delete_preference(preference_id)
+    if success:
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Preference not found'}), 404
+
+
+@app.route('/api/preferences/deleted', methods=['GET'])
+def get_deleted():
+    """Get all soft-deleted preferences for the recycle bin."""
+    prefs = get_deleted_preferences()
+    return jsonify(prefs)
+
+
+@app.route('/api/preferences/<int:preference_id>/restore', methods=['POST'])
+def restore_pref(preference_id):
+    """Restore a soft-deleted preference back to active."""
+    success = restore_preference(preference_id)
+    if success:
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Preference not found or not deleted'}), 404
+
+
+@app.route('/api/learning-stats', methods=['GET'])
+def learning_stats():
+    """Get time-series stats for dashboard charts (rating trend, daily generation counts)."""
+    stats = get_learning_stats()
+    return jsonify(stats)
+
+
+@app.route('/api/clear-knowledge-base', methods=['POST'])
+def clear_knowledge_base():
+    """Delete all indexed emails from ChromaDB. Irreversible."""
+    try:
+        clear_collection()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':

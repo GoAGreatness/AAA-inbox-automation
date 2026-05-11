@@ -108,6 +108,13 @@ def init_database():
         )
     ''')
 
+    # Migration: add deleted_at to user_preferences if it doesn't exist yet
+    cursor.execute("PRAGMA table_info(user_preferences)")
+    columns = [row['name'] for row in cursor.fetchall()]
+    if 'deleted_at' not in columns:
+        cursor.execute("ALTER TABLE user_preferences ADD COLUMN deleted_at TIMESTAMP DEFAULT NULL")
+        print("Migration: added deleted_at column to user_preferences")
+
     conn.commit()
     conn.close()
     print("Database initialized successfully!")
@@ -268,13 +275,77 @@ def save_user_preferences(notes):
 
 
 def get_user_preferences():
-    """Get all stored user preference notes."""
+    """Get all active (non-deleted) preference notes for AI prompt injection."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT note FROM user_preferences ORDER BY created_at ASC')
+    cursor.execute('SELECT note FROM user_preferences WHERE deleted_at IS NULL ORDER BY created_at ASC')
     rows = cursor.fetchall()
     conn.close()
     return [row['note'] for row in rows]
+
+
+def get_all_preferences():
+    """Get all active (non-deleted) preferences with IDs for the dashboard."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, note, created_at FROM user_preferences WHERE deleted_at IS NULL ORDER BY created_at ASC')
+    rows = cursor.fetchall()
+    conn.close()
+    return [{'id': row['id'], 'note': row['note'], 'created_at': row['created_at']} for row in rows]
+
+
+def delete_preference(preference_id):
+    """Soft delete a preference — marks it as deleted but keeps it for the recycle bin."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_preferences SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', (preference_id,))
+    updated = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return updated > 0
+
+
+def get_deleted_preferences():
+    """Get all soft-deleted preferences for the recycle bin."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, note, deleted_at FROM user_preferences WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC')
+    rows = cursor.fetchall()
+    conn.close()
+    return [{'id': row['id'], 'note': row['note'], 'deleted_at': row['deleted_at']} for row in rows]
+
+
+def restore_preference(preference_id):
+    """Restore a soft-deleted preference back to active."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_preferences SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL', (preference_id,))
+    updated = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return updated > 0
+
+
+def get_learning_stats():
+    """Get time-series data for dashboard charts — rating trend and daily generation counts."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Avg rating per day over last 14 days
+    cursor.execute('''
+        SELECT DATE(created_at) as day, AVG(user_rating) as avg_rating, COUNT(*) as count
+        FROM responses
+        WHERE created_at >= DATE('now', '-14 days')
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    ''')
+    daily_rows = cursor.fetchall()
+
+    conn.close()
+
+    return {
+        'daily': [{'day': r['day'], 'avg_rating': round(r['avg_rating'], 1) if r['avg_rating'] else None, 'generated_count': r['count']} for r in daily_rows]
+    }
 
 
 def get_sent_emails(limit=50):
