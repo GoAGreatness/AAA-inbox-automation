@@ -154,25 +154,52 @@ def store_feedback():
     user_rating = data.get('user_rating')
     edit_notes = data.get('edit_notes', '')
     annotations = data.get('annotations', [])
+    learning_enabled = data.get('learning_enabled', True)
 
-    # Fast: store feedback + annotations synchronously
+    # Store feedback in database (always — needed for stats regardless of learning toggle)
     db_store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
+
+    # Save any [[annotation]] notes extracted by the frontend (always — user explicitly added these)
     if annotations:
         save_user_preferences(annotations)
 
-    # Heavy: ChromaDB indexing + LLM diff analysis in background thread
-    user_config = get_user_config()
-    thread = threading.Thread(
-        target=_process_feedback_background,
-        args=(response_id, final_response, was_edited, user_rating, user_config),
-        daemon=True
-    )
-    thread.start()
+    # All learning (edit diff + ChromaDB indexing) skipped if user toggled off
+    if not learning_enabled:
+        print(f"[feedback] Learning disabled by user — skipping edit diff + ChromaDB indexing")
+        return jsonify({'success': True, 'message': 'Feedback stored'})
 
-    return jsonify({
-        'success': True,
-        'message': 'Feedback stored'
-    })
+    # Edit diff analysis: if the user edited the response, ask the LLM what style patterns it can extract
+    if was_edited and final_response:
+        try:
+            from services.ai_service import analyze_edit_diff
+            email_data = get_email_by_response_id(response_id)
+            generated_response = email_data.get('generated_response') if email_data else None
+            user_config = get_user_config()
+            learned = analyze_edit_diff(generated_response, final_response, user_config)
+            if learned:
+                save_user_preferences(learned)
+                print(f"Edit diff analysis: learned {len(learned)} preference(s)")
+        except Exception as e:
+            print(f"Edit diff analysis error (non-blocking): {e}")
+
+    # Auto-learn: add approved response to vector store only if quality threshold met.
+    rated_well = user_rating is not None and user_rating >= 4
+    implicit_approval = user_rating is None and not was_edited
+    if rated_well or implicit_approval:
+        try:
+            email_data = get_email_by_response_id(response_id)
+            if email_data and final_response:
+                vector_id = f"approved-{response_id}"
+                add_sent_email(
+                    email_id=vector_id,
+                    subject=email_data['subject'],
+                    original_body=email_data['body'],
+                    reply_body=final_response
+                )
+        except Exception as e:
+            print(f"Auto-learn error (non-blocking): {e}")
+
+    return jsonify({'success': True, 'message': 'Feedback stored'})
 
 
 @app.route('/api/user-config', methods=['GET'])

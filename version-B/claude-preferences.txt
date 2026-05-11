@@ -35,6 +35,7 @@ TASK WORKFLOW
 - When completing a stage, give a short summary of what was achieved
 - REASON BEFORE IMPLEMENTING: for any non-trivial change, explain the approach and wait for user go-ahead before writing code (user may want to commit/push first)
 - Exception to above: version-stack.md and preference doc updates can be done freely without waiting
+- Before implementing any code changes: check if app.py (port 5000) and serve.py (port 3000) are running using netstat, and warn the user to stop them + deactivate venv before proceeding. Tell the user to restart everything when it's time to test.
 
 TESTING
 -------
