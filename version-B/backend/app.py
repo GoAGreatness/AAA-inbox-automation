@@ -90,13 +90,19 @@ def store_feedback():
     user_rating = data.get('user_rating')
     edit_notes = data.get('edit_notes', '')
     annotations = data.get('annotations', [])
+    learning_enabled = data.get('learning_enabled', True)
 
-    # Store feedback in database
+    # Store feedback in database (always — needed for stats regardless of learning toggle)
     db_store_feedback(response_id, final_response, was_edited, user_rating, edit_notes)
 
-    # Save any [[annotation]] notes extracted by the frontend
+    # Save any [[annotation]] notes extracted by the frontend (always — user explicitly added these)
     if annotations:
         save_user_preferences(annotations)
+
+    # All learning (edit diff + ChromaDB indexing) skipped if user toggled off
+    if not learning_enabled:
+        print(f"[feedback] Learning disabled by user — skipping edit diff + ChromaDB indexing")
+        return jsonify({'success': True, 'message': 'Feedback stored'})
 
     # Edit diff analysis: if the user edited the response, ask the LLM what style patterns it can extract
     if was_edited and final_response:
@@ -113,13 +119,9 @@ def store_feedback():
             print(f"Edit diff analysis error (non-blocking): {e}")
 
     # Auto-learn: add approved response to vector store only if quality threshold met.
-    # Index if: rated >= 4, OR unrated and not edited (implicit approval).
-    # Don't index: rated <= 3, or unrated + edited (quality unknown).
     rated_well = user_rating is not None and user_rating >= 4
     implicit_approval = user_rating is None and not was_edited
-    should_index = rated_well or implicit_approval
-
-    if should_index:
+    if rated_well or implicit_approval:
         try:
             email_data = get_email_by_response_id(response_id)
             if email_data and final_response:
@@ -133,10 +135,7 @@ def store_feedback():
         except Exception as e:
             print(f"Auto-learn error (non-blocking): {e}")
 
-    return jsonify({
-        'success': True,
-        'message': 'Feedback stored and response added to knowledge base'
-    })
+    return jsonify({'success': True, 'message': 'Feedback stored'})
 
 
 @app.route('/api/user-config', methods=['GET'])
