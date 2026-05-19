@@ -54,6 +54,14 @@ ENVIRONMENT NOTES
 - Add-in server: https://localhost:3000
 - AI: Ollama with llama3.2:3b model (local, free)
 
+COMMIT MESSAGES
+---------------
+- Use Conventional Commits format: type(scope): description
+- Types: feat, fix, docs, test, refactor, chore, style, ci
+- Examples: "feat(feedback): add learning toggle", "test(backend): add pytest suite for routes"
+- Keep descriptions short and lowercase
+- No trailing period
+
 GENERAL
 -------
 - Don't use emojis unless user does first
