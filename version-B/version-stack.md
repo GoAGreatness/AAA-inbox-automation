@@ -505,9 +505,9 @@ Response:"""
 - [x] Add statistics dashboard in backend (/api/stats with vector_store_count)
 - [x] get_email_by_response_id() links responses back to original emails
 - [x] Annotation-based preference learning (`[[notes]]` → user_preferences → prompt injection)
-- [ ] **Rating gate on ChromaDB indexing** — only index responses with rating ≥ 4 (or unedited). Currently all responses get indexed regardless of quality. Branch: `version-b-dev--feature--feedback-processing`
-- [ ] **Edit diff analysis via LLM** — on feedback submission, send generated vs final response to LLM to extract style patterns automatically (no manual annotations needed). Findings stored as user_preferences. Branch: `version-b-dev--feature--feedback-processing`
-- [ ] **Ctrl+C nudge** — detect Ctrl+C keypress when cursor is inside the generated response textarea. Shake the Copy Response button as a visual nudge (don't block or disable Ctrl+C — just encourage button use so feedback fires). Branch: `version-b-dev--feature--feedback-processing`
+- [x] **Rating gate on ChromaDB indexing** — only index responses with rating ≥ 4 (or unedited). ✅ Done — `rated_well or implicit_approval` gate in `/api/feedback`
+- [x] **Edit diff analysis via LLM** — on feedback submission, send generated vs final response to LLM to extract style patterns automatically. Findings stored as user_preferences. ✅ Done — `analyze_edit_diff()` wired into `/api/feedback`
+- [x] **Ctrl+C nudge** — detects Ctrl+C inside response textarea, shakes Copy button as a visual nudge without blocking clipboard. ✅ Done — `webapp.js` DOMContentLoaded listener
 
 **Deliverable**: System improves over time with usage
 
@@ -543,20 +543,22 @@ URL params on load and immediately calls the backend to generate a response.
 
 ---
 
-### **Stage 8b: Dashboard / Main Page** ⏳
+### **Stage 8b: Dashboard / Main Page** ✅ (Complete)
 **Goal**: Give the user a home screen that makes the add-in's intelligence visible and manageable
 
 **Background**: Currently the add-in opens directly to the response generator with no way to see what the system has learned, manage preferences, or check AI provider health. A dashboard page accessible via a third VBA button would close this gap.
 
 **Tasks**:
-- [ ] **Third VBA button** — "Open Dashboard" button added to Outlook Quick Access Toolbar, opens `https://localhost:3000/dashboard`
-- [ ] **Knowledge Base Health panel** — emails indexed in ChromaDB, last import date, bar chart showing knowledge base growth over time (Chart.js CDN, no install)
-- [ ] **What I've Learned panel** — preference manager: lists all stored `user_preferences` as deletable chips/tags. New backend endpoint: `DELETE /api/preferences/<id>`. Closes the "flying blind" problem with annotations.
-- [ ] **Your Writing Stats panel** — average rating trend over time (line chart), edit rate %, most-used style setting. Sourced from existing `/api/stats` + new `/api/learning-stats` endpoint.
-- [ ] **AI Provider Status indicator** — live ping showing active provider and reachability. Saves debugging confusion when provider is down.
-- [ ] **Quick Actions** — "Re-import Sent Items" shortcut (triggers VBA macro flow without reopening Outlook), "Clear Knowledge Base" with confirmation guard.
-- [ ] New backend endpoints: `GET /api/preferences`, `DELETE /api/preferences/<id>`, `GET /api/learning-stats`
-- [ ] Chart.js via CDN (single script tag) — no framework install needed
+- [x] **Third VBA button** — `OpenDashboard()` Sub added to VBA macro, opens `https://localhost:3000/dashboard` in Chrome
+- [x] **Knowledge Base Health panel** — emails indexed in ChromaDB, last import date, vector store count
+- [x] **What I've Learned panel** — preference chips with soft-delete, recycle bin modal with Restore All, `deleted_at` migration on `user_preferences`
+- [x] **Your Writing Stats panel** — Chart.js dual-axis line chart (avg rating + daily generated count, last 14 days)
+- [x] **AI Provider Status indicator** — live ping to `/api/health`, shows active provider + reachability
+- [x] **Quick Actions** — Recycle Bin + Clear Knowledge Base (imposing DELETE-to-confirm modal)
+- [x] New backend endpoints: `GET /api/preferences`, `DELETE /api/preferences/<id>`, `GET /api/preferences/deleted`, `POST /api/preferences/<id>/restore`, `GET /api/learning-stats`, `POST /api/clear-knowledge-base`
+- [x] Chart.js via CDN (single script tag)
+
+**Completed**: 2026-05-14
 
 **Design constraints**:
 - No third-party UI frameworks — consistent with existing plain HTML/CSS/JS webapp
@@ -582,17 +584,23 @@ Every time a new LLM provider is added, complete all items below:
 
 ---
 
-### **Stage 9: GitHub & DevOps Setup** ⏳
+### **Stage 9: GitHub & DevOps Setup** ✅ (Complete)
 **Goal**: Establish professional SDLC infrastructure
 
 **Tasks**:
-- [ ] GitHub Issues — migrate version-stack TODOs to Issues for tracking
-- [ ] Branch protection on `main` — require PRs, no direct pushes
-- [ ] GitHub Secrets — store API keys (GEMINI_API_KEY, GOA_API_KEY) for deployment
-- [ ] GitHub Environments — separate `dev` and `prod` configs
-- [ ] GitHub Actions — CI/CD pipeline (runs tests on every PR)
+- [x] GitHub Issues — migrated version-stack TODOs to Issues (labelled by type/priority)
+- [x] Branch protection on `main` — ruleset enforced (repo made public for GitHub Free plan enforcement)
+- [x] GitHub Secrets — GEMINI_API_KEY, GROQ_API_KEY, GOA_API_KEY stored in repo secrets
+- [x] GitHub Environments — `dev` environment created, used by CI job
+- [x] GitHub Actions — CI pipeline (`.github/workflows/ci.yml`): installs deps + checks backend imports on every push to `version-b-dev` and every PR to `main`
 
-**Deliverable**: Professional repo with protected branches, secrets management, and CI/CD foundation
+**Deliverable**: Professional repo with protected branches, secrets management, and CI/CD foundation ✅
+
+**Completed**: 2026-05-14
+
+**Notes**:
+- CI skips chromadb/sentence-transformers for speed — deferred until Stage 10 real tests exercise those imports
+- Conventional Commits format adopted: `type(scope): description`
 
 ---
 
@@ -600,13 +608,19 @@ Every time a new LLM provider is added, complete all items below:
 **Goal**: Automated test coverage across backend and frontend
 
 **Tasks**:
-- [ ] pytest — Python backend unit tests (Flask routes, ai_service, database_service)
-- [ ] Jest — JS unit tests for frontend logic (taskpane.js / webapp.js)
-- [ ] Cypress — E2E tests for the web app UI
-- [ ] Postman/Newman — API endpoint tests
-- [ ] Wire tests into GitHub Actions (runs on every PR)
+- [ ] **pytest** (priority) — Python backend unit tests: `database_service`, Flask routes, `thread_parser`. Uses in-memory/temp SQLite, mocked AI + ChromaDB. Files: `tests/conftest.py`, `tests/test_database_service.py`, `tests/test_routes.py`, `tests/test_thread_parser.py`
+- [ ] Wire pytest into CI (`ci.yml` — replace import-check step with real test run, add chromadb/sentence-transformers to install)
+- [ ] **Jest** (deferred) — JS unit tests for `webapp.js` logic (`getLearningEnabled`, `getProviderErrorMessage`, etc.)
+- [ ] **Cypress** (deferred) — E2E browser tests for full UI workflow
+- [ ] **Postman/Newman** (deferred) — API contract tests against live Flask server
 
-**Deliverable**: Test suite running in CI on every PR
+**Testing layers** (no overlap):
+- pytest = backend Python logic
+- Jest = frontend JS unit logic (no browser)
+- Cypress = full browser UI workflow
+- Newman = HTTP API contract (endpoint shapes)
+
+**Deliverable**: pytest suite running in CI on every PR; other layers in a later sub-stage
 
 ---
 
