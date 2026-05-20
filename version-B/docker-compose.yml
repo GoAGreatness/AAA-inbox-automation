@@ -1,0 +1,11 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount local data directory so SQLite + ChromaDB persist on your machine
+      - ./backend/data:/app/backend/data
+    env_file:
+      - .env
+    restart: unless-stopped
