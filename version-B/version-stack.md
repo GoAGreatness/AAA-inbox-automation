@@ -1156,6 +1156,23 @@ certutil -addstore -user Root backend/data/ssl/cert.pem
 
 ---
 
+## Architecture Decision Log
+
+Key decision points made during development — for future reference.
+
+| # | Decision | Options Considered | Choice | Why |
+|---|----------|--------------------|--------|-----|
+| 1 | AI provider | Anthropic API, Ollama (local), GoA LLM cluster | Ollama (local) as default; Gemini + GoA added later | No API costs, full data privacy for POC |
+| 2 | Add-in approach | Office.js manifest add-in, VBA macro + Chrome webapp | VBA macro + Chrome webapp | GoA Exchange policy blocked Office.js manifest installs |
+| 3 | Vector store | FAISS, ChromaDB | ChromaDB | Simpler local setup, no installation complexity |
+| 4 | Database | PostgreSQL, SQLite | SQLite (local); PostgreSQL deferred to Stage 12 | Single-user POC — SQLite is sufficient and zero-config |
+| 5 | Frontend serving (deployment) | Separate serve.py server, Flask serves static files, nginx container | Flask serves static files | One server = one deployment unit; serve.py stays for local dev only |
+| 6 | Repo structure | One repo per version, one repo for all versions | One repo, all versions as branches/folders | Supports GitHub release tags per version (v1.0, v2.0 etc.) |
+| 7 | Branch protection | Enforce on private repo, make repo public | Made repo public | GitHub Free plan only enforces rulesets on public repos |
+| 8 | SQLite → PostgreSQL migration | Migrate for deployment, keep SQLite | Keep SQLite for now | Single-user deployment — migration only needed for multi-user shared server |
+
+---
+
 ## Data Store Cleanup (2026-03-11)
 - SQLite `sent_emails` table renamed to `sent_emails_legacy` — superseded by ChromaDB. Not actively written to or read from.
 - `historical_emails` stat now reads from ChromaDB collection count (was reading empty SQLite table).
