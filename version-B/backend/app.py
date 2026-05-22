@@ -1,7 +1,7 @@
 """
 Main Flask application for email response generation backend.
 """
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
@@ -25,6 +25,24 @@ CORS(app, origins="*", supports_credentials=False)
 
 # Configuration
 app.config['DEBUG'] = os.getenv('DEBUG', 'True') == 'True'
+
+# Webapp static files — served by Flask for deployment (serve.py used for local dev)
+WEBAPP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'outlook-addin', 'src', 'webapp'))
+
+
+@app.route('/')
+def serve_index():
+    return send_from_directory(WEBAPP_DIR, 'index.html')
+
+
+@app.route('/dashboard')
+def serve_dashboard():
+    return send_from_directory(WEBAPP_DIR, 'dashboard.html')
+
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(WEBAPP_DIR, filename)
 
 
 @app.route('/api/health', methods=['GET'])
