@@ -2,13 +2,32 @@
 ## Outlook Web Add-in with Local Backend
 
 ## KNOWN ISSUES / FUTURE IMPROVEMENTS
-1. **AI Context** - Model doesn't understand it should reply as the logged-in user (first person)
-2. **Shared Mailbox** - Add-in doesn't appear for shared mailboxes (core project requirement!)
-3. **UI Customization** - Need more customization options in the add-in task pane
-4. **AI Provider Options** - Add support for GoA LLM cluster and OpenAI/HuggingFace models (Llama is slow/limited)
-5. **Background Generation** - When user minimizes add-in (top-left arrow), generation should continue in background and be ready when they reopen
-6. **User Setup/Config** - Per-user configuration (name, email, role) so AI generates from the correct perspective. Important for multi-user deployment.
-7. **Graph API Integration** - Bulk import sent emails programmatically (replaces manual drag-and-drop)
+1. **AI Context** - ✅ Fixed - model now replies as the logged-in user (first person, with signature)
+2. **Shared Mailbox** - ✅ Fixed - VBA macro reads shared mailbox emails correctly (tested 2026-02-24)
+3. **UI Customization** - ✅ Partial - Auto-generate toggle added to Settings + first-run setup (2026-02-26). More options possible.
+   - **TODO**: Dynamic RAG context depth — currently fixed at 15 (bumped from 12, 2026-03-11). Future: LLM-driven selection — pre-prompt asks model to assess email complexity and return a count, then that count drives `find_similar_emails()`. Planned for branch `version-b-dev--feature--information-processing`.
+   - **TODO**: Add a "Save" button to the left of the "Generate Response" button — saves the Extra Instructions textarea and Style dropdown values immediately on click, so the user can explicitly persist their generation preferences without having to generate first.
+   - ~~**Bug**: "Always include signature" checkbox unchecking does not persist~~ ✅ Fixed 2026-04-30
+   - ~~**Bug**: On regeneration, if an error occurs, the previously generated response disappears~~ ✅ Fixed 2026-04-30
+   - ~~**Bug**: Copying a response with `[[annotations]]` strips all newlines/paragraph spacing~~ ✅ Fixed (annotation regex preserves formatting)
+   - ~~**Bug**: Clicking "Stop" during generation shows a provider error popup~~ ✅ Fixed 2026-04-30
+4. **AI Provider Options** - ✅ Complete - Gemini (default), GoA LLM cluster, and Ollama all integrated (2026-04-10). User selects provider in Settings modal + first-run setup. Gemini uses Google's OpenAI-compatible endpoint (gemini-2.0-flash, free tier 1500 req/day). Error handling improved — provider failures now show a persistent modal popup with "Open Settings" shortcut instead of dumping error text into the response box.
+   - **TODO**: Obtain GoA CA cert to replace verify=False and suppress InsecureRequestWarning
+   - **TODO**: GoA endpoint returning 404 — endpoint URL or model name may have changed. Confirm with boss.
+   - **TODO**: Per-model annotation preferences (currently global). Future: allow user to configure per-model in Settings.
+   - **TODO**: Dynamic learned preference count — `analyze_edit_diff()` currently hardcodes "up to 5" preferences. Should ask the LLM to determine how many style patterns are genuinely present in the diff, same way `_determine_rag_depth()` works. Deferred.
+   - **TODO**: Groq free tier token limit — requests with large RAG context (15k+ tokens) exceed both model TPM limits. Fix: (1) Groq-specific RAG depth cap (max 5 emails), (2) truncate past email bodies in context to ~200 chars each. Deferred — workaround is to use shorter emails or switch to Gemini.
+   - **TODO**: Clearing user profile should cascade to user_preferences and all associated metadata. Deferred until sessions/profiles are properly implemented.
+5. **Sent Email Import** - ✅ Complete - Import is a standalone VBA button (decoupled from Generate). VBA hands off to background PowerShell script (import_sent.ps1) — no Outlook freeze. Windows toast notification confirms completion. First-run setup shows import reminder before generating. Post-generate reminder fires every 10 generations. RAG badge working.
+6. **Sessions & Security** - Currently single-user (config stored locally). Future: proper user sessions, credentials, and secure config storage for multi-user deployment
+7. **Office.js Add-in** - Manifest installs but add-in silently fails to appear in Outlook ribbon (GoA Exchange policy suspected). Replaced by VBA macro approach.
+8. **Email Thread Awareness** - VBA reads full body (includes quoted thread) but doesn't parse each message separately. Future: intelligent thread parsing.
+9. **Annotation-Based Preference Learning** - ✅ Complete - Users add `[[notes]]` in edited responses. Frontend extracts + strips them before copying. Annotations sent to backend, stored in `user_preferences` table (deduped). AI prompt includes all stored preferences on every generation.
+   - **TODO**: Allow user to view, edit, and remove individual stored annotations — moved to Dashboard (Stage 8b, "What I've Learned" panel).
+   - **TODO**: Allow user to select which annotations are directly relevant before generating a response (per-generation annotation filtering).
+   - **TODO**: User-gated preference approval — auto-learned preferences from `analyze_edit_diff()` should not be silently added to the pool. Instead, stage them separately and after every 10 generations (same trigger as the import reminder), show a pop-up listing the staged preferences so the user can pick which ones to keep. Only approved ones get committed to `user_preferences`. Gives the user control over what the AI learns automatically. Note: currently auto-learned and annotated preferences are indistinguishable once stored — this feature would require a `source` or `staged` flag on the `user_preferences` table.
+10. **User Documentation Page** - Static page (with dropdowns/accordions) explaining all add-in features and how to use them. Linked from the web app footer. (SWE term: User Guide / Product Docs)
+11. **External Input Text Box** - A text box in the UI allowing users to provide additional context/instructions before generation (e.g. "focus on the third question only", "keep it under 3 sentences"). Injected into the prompt alongside annotations and RAG context.
 
 ## ADMIN ACCESS TODO LIST (Completed 2026-02-12)
 - [x] Trust SSL cert in machine store (via .z admin account)
@@ -476,39 +495,187 @@ Response:"""
 
 ---
 
-### **Stage 7: Learning & Feedback Loop** ⏳
+### **Stage 7: Learning & Feedback Loop** ⏳ (Partially Complete)
 **Goal**: System learns from user edits
 
 **Tasks**:
-- [ ] Track what users change in responses
-- [ ] Analyze common edits to identify patterns
-- [ ] Store approved final responses as examples
-- [ ] Re-embed and update vector store with new data
-- [ ] Add statistics dashboard in backend
-- [ ] Create simple admin panel (optional)
+- [x] Track what users change in responses (was_edited, edit_notes in feedback)
+- [x] Store approved final responses as examples (auto-learn in /api/feedback)
+- [x] Re-embed and update vector store with new data (approved responses → ChromaDB)
+- [x] Add statistics dashboard in backend (/api/stats with vector_store_count)
+- [x] get_email_by_response_id() links responses back to original emails
+- [x] Annotation-based preference learning (`[[notes]]` → user_preferences → prompt injection)
+- [x] **Rating gate on ChromaDB indexing** — only index responses with rating ≥ 4 (or unedited). ✅ Done — `rated_well or implicit_approval` gate in `/api/feedback`
+- [x] **Edit diff analysis via LLM** — on feedback submission, send generated vs final response to LLM to extract style patterns automatically. Findings stored as user_preferences. ✅ Done — `analyze_edit_diff()` wired into `/api/feedback`
+- [x] **Ctrl+C nudge** — detects Ctrl+C inside response textarea, shakes Copy button as a visual nudge without blocking clipboard. ✅ Done — `webapp.js` DOMContentLoaded listener
 
 **Deliverable**: System improves over time with usage
 
-**Estimated Time**: 3-4 hours
+**Branch**: `version-b-dev--feature--feedback-processing`
+
+**How it works**: When user submits feedback via /api/feedback, the approved response is automatically added to ChromaDB vector store. Future generations will find this response as a similar example via RAG, improving quality over time. Stats endpoint tracks total generated, avg rating, edit rate, and vector store growth.
 
 ---
 
-### **Stage 8: Polish & Production Readiness** ⏳
-**Goal**: Make it robust and user-friendly
+### **Stage 8: VBA + Chrome Web App (Add-in Replacement)** ✅ (Complete)
+**Goal**: Replace broken Office.js add-in with a reliable Outlook → Chrome workflow
+
+**Background**: Office.js manifest add-in was abandoned after GoA Exchange policies blocked
+ReadWriteMailbox permission and Outlook silently rejected manifest installs. Pivoted to
+VBA macro + standalone Chrome web app approach.
 
 **Tasks**:
-- [ ] Add comprehensive error handling
-- [ ] Implement logging (backend and add-in)
-- [ ] Add offline detection and graceful degradation
-- [ ] Create user documentation
-- [ ] Add keyboard shortcuts
-- [ ] Performance optimization (caching, etc.)
-- [ ] Security review (API keys, CORS, etc.)
-- [ ] Package for deployment (if sharing with team)
+- [x] Create VBA macro (scripts/email_response_macro.vba) - reads selected email, opens Chrome
+- [x] Create standalone web app (outlook-addin/src/webapp/index.html + webapp.js)
+- [x] Auto-generate response on Chrome page load (no extra click needed)
+- [x] RAG badge showing how many past emails were used as context
+- [x] Animated loading bar during generation
+- [x] Copy to clipboard + star rating + feedback loop (auto-learn still works)
+- [x] Add macro button to Outlook Quick Access Toolbar
 
-**Deliverable**: Production-ready Version B
+**Deliverable**: Click email → click toolbar button → Chrome opens → response auto-generates ✅
 
-**Estimated Time**: 4-5 hours
+**Completed**: 2026-02-24
+
+**How it works**: VBA macro reads the selected email from Outlook via COM, URL-encodes
+the subject/sender/body, and opens Chrome with the webapp URL. The webapp reads those
+URL params on load and immediately calls the backend to generate a response.
+
+---
+
+### **Stage 8b: Dashboard / Main Page** ✅ (Complete)
+**Goal**: Give the user a home screen that makes the add-in's intelligence visible and manageable
+
+**Background**: Currently the add-in opens directly to the response generator with no way to see what the system has learned, manage preferences, or check AI provider health. A dashboard page accessible via a third VBA button would close this gap.
+
+**Tasks**:
+- [x] **Third VBA button** — `OpenDashboard()` Sub added to VBA macro, opens `https://localhost:3000/dashboard` in Chrome
+- [x] **Knowledge Base Health panel** — emails indexed in ChromaDB, last import date, vector store count
+- [x] **What I've Learned panel** — preference chips with soft-delete, recycle bin modal with Restore All, `deleted_at` migration on `user_preferences`
+- [x] **Your Writing Stats panel** — Chart.js dual-axis line chart (avg rating + daily generated count, last 14 days)
+- [x] **AI Provider Status indicator** — live ping to `/api/health`, shows active provider + reachability
+- [x] **Quick Actions** — Recycle Bin + Clear Knowledge Base (imposing DELETE-to-confirm modal)
+- [x] New backend endpoints: `GET /api/preferences`, `DELETE /api/preferences/<id>`, `GET /api/preferences/deleted`, `POST /api/preferences/<id>/restore`, `GET /api/learning-stats`, `POST /api/clear-knowledge-base`
+- [x] Chart.js via CDN (single script tag)
+
+**Completed**: 2026-05-14
+
+**Design constraints**:
+- No third-party UI frameworks — consistent with existing plain HTML/CSS/JS webapp
+- Chart.js only (CDN) for charts
+- All data from existing endpoints + two new lightweight ones
+- Must work offline for everything except the AI provider ping
+
+**Branch**: `version-b-dev--feature--dashboard`
+
+---
+
+### **New LLM Integration Checklist**
+Every time a new LLM provider is added, complete all items below:
+
+- [ ] Add `_call_<provider>()` to `ai_service.py` (OpenAI-compatible pattern)
+- [ ] Add `elif provider == '<provider>'` to ALL THREE dispatch blocks in `ai_service.py`: `_determine_rag_depth()`, `generate_email_response()`, `analyze_edit_diff()`
+- [ ] Add provider option to both dropdowns in `index.html` (Settings modal + first-run setup)
+- [ ] Add provider name to `getProviderErrorMessage()` name map in `webapp.js`
+- [ ] Add status-code-specific error messages for known failure modes (413 token limit, 503 high demand, 401 auth, 404 endpoint, etc.)
+- [ ] Add `<PROVIDER>_API_KEY` and `<PROVIDER>_MODEL` to `.env.example`
+- [ ] Update `AI_PROVIDER` comment in `.env.example` to include new provider name
+- [ ] Test with the provider selected in Settings — confirm generation, feedback, and edit diff all route correctly (no Ollama fallthrough)
+
+---
+
+### **Stage 9: GitHub & DevOps Setup** ✅ (Complete)
+**Goal**: Establish professional SDLC infrastructure
+
+**Tasks**:
+- [x] GitHub Issues — migrated version-stack TODOs to Issues (labelled by type/priority)
+- [x] Branch protection on `main` — ruleset enforced (repo made public for GitHub Free plan enforcement)
+- [x] GitHub Secrets — GEMINI_API_KEY, GROQ_API_KEY, GOA_API_KEY stored in repo secrets
+- [x] GitHub Environments — `dev` environment created, used by CI job
+- [x] GitHub Actions — CI pipeline (`.github/workflows/ci.yml`): installs deps + checks backend imports on every push to `version-b-dev` and every PR to `main`
+
+**Deliverable**: Professional repo with protected branches, secrets management, and CI/CD foundation ✅
+
+**Completed**: 2026-05-14
+
+**Notes**:
+- CI skips chromadb/sentence-transformers for speed — deferred until Stage 10 real tests exercise those imports
+- Conventional Commits format adopted: `type(scope): description`
+
+---
+
+### **Stage 10: Testing** ⏳
+**Goal**: Automated test coverage across backend and frontend
+
+**Tasks**:
+- [ ] **pytest** (priority) — Python backend unit tests: `database_service`, Flask routes, `thread_parser`. Uses in-memory/temp SQLite, mocked AI + ChromaDB. Files: `tests/conftest.py`, `tests/test_database_service.py`, `tests/test_routes.py`, `tests/test_thread_parser.py`
+- [ ] Wire pytest into CI (`ci.yml` — replace import-check step with real test run, add chromadb/sentence-transformers to install)
+- [ ] **Jest** (deferred) — JS unit tests for `webapp.js` logic (`getLearningEnabled`, `getProviderErrorMessage`, etc.)
+- [ ] **Cypress** (deferred) — E2E browser tests for full UI workflow
+- [ ] **Postman/Newman** (deferred) — API contract tests against live Flask server
+
+**Testing layers** (no overlap):
+- pytest = backend Python logic
+- Jest = frontend JS unit logic (no browser)
+- Cypress = full browser UI workflow
+- Newman = HTTP API contract (endpoint shapes)
+
+**Deliverable**: pytest suite running in CI on every PR; other layers in a later sub-stage
+
+---
+
+### **Stage 11: Containerization** ⏳
+**Goal**: Package app for consistent deployment
+
+**Tasks**:
+- [ ] Dockerfile for Flask backend
+- [ ] Docker Compose for local dev (backend + ChromaDB)
+- [ ] Test containerized build locally
+
+**Deliverable**: App runs identically in any environment via Docker
+
+---
+
+### **Stage 12: Deployment** ⏳
+**Goal**: Deploy to production (internal GoA infrastructure)
+
+**Tasks**:
+- [ ] Azure App Service (free F1 tier) for Flask backend — GoA uses Azure
+- [ ] Azure Static Web Apps for add-in static files
+- [ ] Migrate SQLite → PostgreSQL for production
+- [ ] New Relic (free tier) or Azure Monitor for observability
+- [ ] Update manifest.xml to point to production URLs
+- [ ] Security review (FOIP/ATIA compliance, OAuth 2.0, RBAC)
+- [ ] EWS / Graph API for auto-importing sent emails (EWS blocked by GoA policy)
+
+**Stack for deployment**:
+- Hosting: Azure App Service (GoA uses Azure)
+- Database: PostgreSQL (replaces SQLite)
+- Monitoring: New Relic free tier (100GB/month) or Azure Monitor
+- CI/CD: GitHub Actions → Azure
+
+**Deliverable**: Production-ready Version B accessible to team
+
+**Estimated Time**: TBD
+
+---
+
+### **Stage 13: Resource Optimization** ⏳
+**Goal**: Make the add-in and backend as efficient as possible before wider rollout. Reduce computational overhead, improve perceived performance, and ensure the system is stable under real usage.
+
+**Background**: This stage is intentionally last — optimise only once the product is shippable and real usage patterns are known. Premature optimisation is avoided throughout earlier stages.
+
+**Tasks**:
+- [ ] **Background thread for feedback processing** — ChromaDB indexing + `analyze_edit_diff` LLM call currently run synchronously after Copy. Move to `threading.Thread` (fire-and-forget) so Copy returns instantly. Branch: `version-b-dev--feature--feedback-processing`
+- [ ] **Resource overhead tracking** — log time and memory usage for key operations (generation, RAG lookup, ChromaDB indexing, edit diff analysis). Expose via `/api/stats` and surface on Dashboard.
+- [ ] **ChromaDB embedding performance** — profile `sentence-transformers` embedding time. Evaluate caching or batching strategies if bottlenecks found.
+- [ ] **RAG query optimisation** — profile `find_similar_emails()` at scale. Consider indexing strategies if ChromaDB query time grows.
+- [ ] **Ollama resource spike investigation** — determine whether Ollama is being called unexpectedly during feedback processing. Add logging to confirm call sites.
+- [ ] **Response streaming** (stretch) — stream Gemini/Groq responses token-by-token to the frontend so the user sees text appearing rather than waiting for the full response.
+
+**Design principle**: Measure first, optimise second. Every task here should be informed by actual metrics, not assumptions.
+
+**Branch**: `version-b-dev--feature--resource-optimisation`
 
 ---
 
@@ -545,25 +712,21 @@ Response:"""
 ---
 
 ### AI Provider Selection
-**Decision**: Start with Anthropic API, allow Ollama fallback
+**Current**: Three providers available — user selects in Settings modal
 
-**Anthropic API (Claude)**:
-- ✅ Better quality
-- ✅ Faster responses
-- ✅ Easier setup
-- ✅ Cost-effective (~$0.001/email with Haiku)
-- ❌ Requires internet
-- ❌ Sends data externally (review privacy policy)
+**Ollama (Local)** ✅ Default fallback
+- Fully offline, free, complete data privacy
+- Slower, lower quality (llama3.2:3b)
 
-**Ollama (Local)**:
-- ✅ Fully offline
-- ✅ Free after setup
-- ✅ Complete data privacy
-- ❌ Slower responses
-- ❌ Requires more powerful hardware
-- ❌ Model quality varies
+**GoA LLM Cluster** ✅ Integrated (endpoint currently 404 — needs confirmation)
+- Internal government GPT cluster (gpt-oss-120b)
+- OpenAI-compatible API, ~1.5s generation
+- Requires VPN
 
-**Recommendation**: Start with Anthropic API for POC, add Ollama option if privacy is strict requirement.
+**Google Gemini** ✅ Added 2026-04-09
+- gemini-2.0-flash, free tier (1500 req/day)
+- OpenAI-compatible endpoint
+- Best free option for quality + speed
 
 ---
 
@@ -991,6 +1154,31 @@ certutil -addstore -user Root backend/data/ssl/cert.pem
 
 ---
 
-**Last Updated**: 2026-02-10
+---
+
+## Architecture Decision Log
+
+Key decision points made during development — for future reference.
+
+| # | Decision | Options Considered | Choice | Why |
+|---|----------|--------------------|--------|-----|
+| 1 | AI provider | Anthropic API, Ollama (local), GoA LLM cluster | Ollama (local) as default; Gemini + GoA added later | No API costs, full data privacy for POC |
+| 2 | Add-in approach | Office.js manifest add-in, VBA macro + Chrome webapp | VBA macro + Chrome webapp | GoA Exchange policy blocked Office.js manifest installs |
+| 3 | Vector store | FAISS, ChromaDB | ChromaDB | Simpler local setup, no installation complexity |
+| 4 | Database | PostgreSQL, SQLite | SQLite (local); PostgreSQL deferred to Stage 12 | Single-user POC — SQLite is sufficient and zero-config |
+| 5 | Frontend serving (deployment) | Separate serve.py server, Flask serves static files, nginx container | Flask serves static files | One server = one deployment unit; serve.py stays for local dev only |
+| 6 | Repo structure | One repo per version, one repo for all versions | One repo, all versions as branches/folders | Supports GitHub release tags per version (v1.0, v2.0 etc.) |
+| 7 | Branch protection | Enforce on private repo, make repo public | Made repo public | GitHub Free plan only enforces rulesets on public repos |
+| 8 | SQLite → PostgreSQL migration | Migrate for deployment, keep SQLite | Keep SQLite for now | Single-user deployment — migration only needed for multi-user shared server |
+
+---
+
+## Data Store Cleanup (2026-03-11)
+- SQLite `sent_emails` table renamed to `sent_emails_legacy` — superseded by ChromaDB. Not actively written to or read from.
+- `historical_emails` stat now reads from ChromaDB collection count (was reading empty SQLite table).
+- `scripts/check_sent_emails.py` updated to query ChromaDB directly — lists all emails individually with drill-down by index or ID.
+- `find_similar_emails()` default bumped to `n_results=15`.
+
+**Last Updated**: 2026-03-11
 **Version**: 1.0
 **Route**: B (Outlook Web Add-in with Local Backend)

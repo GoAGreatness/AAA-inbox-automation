@@ -23,3 +23,6 @@ Thumbs.db
 
 # Claude
 .claude/
+
+# Personal reference docs
+full-stack-dev-stack-guidance.pdf

@@ -39,12 +39,13 @@ def add_sent_email(email_id, subject, original_body, reply_body):
         ids=[str(email_id)],
         metadatas=[{
             "subject": subject,
-            "reply_body": reply_body
+            "reply_body": reply_body,
+            "original_body": original_body
         }]
     )
 
 
-def find_similar_emails(subject, body, n_results=3):
+def find_similar_emails(subject, body, n_results=15):
     """
     Find similar past emails using semantic search.
     Returns the most similar sent emails based on meaning.
@@ -66,6 +67,7 @@ def find_similar_emails(subject, body, n_results=3):
             'id': results['ids'][0][i],
             'document': results['documents'][0][i],
             'reply': results['metadatas'][0][i].get('reply_body', ''),
+            'original_body': results['metadatas'][0][i].get('original_body', ''),
             'subject': results['metadatas'][0][i].get('subject', ''),
             'distance': results['distances'][0][i]
         })
@@ -76,3 +78,13 @@ def find_similar_emails(subject, body, n_results=3):
 def get_collection_count():
     """Return how many emails are in the vector store."""
     return sent_emails_collection.count()
+
+
+def clear_collection():
+    """Delete and recreate the sent_emails collection, removing all indexed emails."""
+    global sent_emails_collection
+    client.delete_collection("sent_emails")
+    sent_emails_collection = client.get_or_create_collection(
+        name="sent_emails",
+        embedding_function=embedding_fn
+    )

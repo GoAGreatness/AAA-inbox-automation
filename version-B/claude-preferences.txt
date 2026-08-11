@@ -29,10 +29,13 @@ TEACHING APPROACH
 TASK WORKFLOW
 -------------
 - Follow stages defined in version-stack.md
-- Update version-stack.md as tasks are completed (check boxes, mark stages done)
+- Update version-stack.md as tasks are completed (check boxes, mark stages done) — no need to wait for permission
 - Update MEMORY.md (in .claude folder) with progress at end of sessions
 - Before switching machines or ending session: remind user to commit and push
 - When completing a stage, give a short summary of what was achieved
+- REASON BEFORE IMPLEMENTING: for any non-trivial change, explain the approach and wait for user go-ahead before writing code (user may want to commit/push first)
+- Exception to above: version-stack.md and preference doc updates can be done freely without waiting
+- Before implementing any code changes: check if app.py (port 5000) and serve.py (port 3000) are running using netstat, and warn the user to stop them + deactivate venv before proceeding. Tell the user to restart everything when it's time to test.
 
 TESTING
 -------
@@ -51,6 +54,14 @@ ENVIRONMENT NOTES
 - Add-in server: https://localhost:3000
 - AI: Ollama with llama3.2:3b model (local, free)
 
+COMMIT MESSAGES
+---------------
+- Use Conventional Commits format: type(scope): description
+- Types: feat, fix, docs, test, refactor, chore, style, ci
+- Examples: "feat(feedback): add learning toggle", "test(backend): add pytest suite for routes"
+- Keep descriptions short and lowercase
+- No trailing period
+
 GENERAL
 -------
 - Don't use emojis unless user does first
@@ -63,6 +74,20 @@ GENERAL
 - Remind user to git commit after EVERY change/step in a stage (no matter how small)
   - Exception: Don't prompt commits for standalone version-stack.md or preference doc updates
   - Only skip if no other files were changed alongside them
+- Be PROACTIVE and DIRECTIVE: if user is about to lose work, create tech debt, or there's a clearly better approach — flag it and propose the better path before they proceed
+- When user asks what we've done (for pushing), give a concise rundown in "what + why" format
+
+VBA UPDATES
+-----------
+- Any change to a .vba file MUST be accompanied by a clear reminder that the user needs to manually update the macro inside Outlook (Alt+F11)
+- Always list exactly which Sub(s) need updating and what line(s) to change
+- File changes alone do NOT take effect — Outlook loads VBA from its own internal store
+
+BOUNDARIES
+----------
+- NEVER read or write the .env file under any circumstances — treat it as off-limits
+- User will manage .env directly; Claude only guides what values to add/change via instructions
+- User will grant explicit permission if an exception is ever needed
 
 DATA SECURITY
 -------------
@@ -72,3 +97,5 @@ DATA SECURITY
 - All user/email data stays LOCAL ONLY (SQLite, ChromaDB, file imports)
 - No sensitive info in code, comments, prompts, or config files
 - When creating sample/test data, use generic placeholders (test@example.com, "John Doe", etc.)
+- Always consider organizational safety before suggesting commands that touch live mailbox/org data
+- Prefer manual Outlook UI actions over scripts for anything that modifies live email/mailbox data

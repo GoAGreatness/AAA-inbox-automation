@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Response Generator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: #0078d4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .email-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 6px 12px;
+            align-items: start;
+        }
+
+        .email-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .email-value {
+            font-size: 13px;
+            color: #222;
+            word-break: break-word;
+        }
+
+        .subject-value {
+            font-weight: 600;
+            color: #0078d4;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+        }
+
+        .generate-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-generate {
+            flex: 3;
+        }
+
+        .btn-style-select {
+            flex: 1;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #0078d4;
+            color: white;
+            transition: all 0.15s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            text-align: center;
+        }
+
+        .btn-style-select:hover {
+            background: #005a9e;
+        }
+
+        .extra-instructions {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #222;
+            resize: vertical;
+            transition: border-color 0.15s;
+            margin-bottom: 10px;
+            min-height: 48px;
+            line-height: 1.5;
+        }
+
+        .extra-instructions:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #0078d4;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #005a9e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,120,212,0.3);
+        }
+
+        .btn-stop {
+            background: #dc3545;
+            color: white;
+            width: auto;
+            padding: 12px 18px;
+            flex-shrink: 0;
+        }
+
+        .btn-stop:hover {
+            background: #b02a37;
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-copy:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+        }
+
+        .btn-copy.copied {
+            background: #155724;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%       { transform: translateX(-6px); }
+            40%       { transform: translateX(6px); }
+            60%       { transform: translateX(-4px); }
+            80%       { transform: translateX(4px); }
+        }
+
+        .btn-copy .copy-btn-label.shake {
+            display: inline-block;
+            animation: shake 0.4s ease;
+        }
+
+        .btn-copy {
+            position: relative;
+        }
+
+        .btn-copy::after {
+            content: "Use this button to copy — it logs your feedback so the AI learns your style over time.";
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 230px;
+            background: #333;
+            color: #fff;
+            font-size: 12px;
+            font-weight: normal;
+            padding: 7px 10px;
+            border-radius: 6px;
+            line-height: 1.4;
+            z-index: 100;
+            pointer-events: none;
+            white-space: normal;
+            opacity: 0;
+            transition: opacity 0s;
+            transition-delay: 0s;
+        }
+
+        .btn-copy:hover::after {
+            opacity: 1;
+            transition-delay: 0.7s;
+        }
+
+        .loading-bar {
+            height: 3px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 12px 0;
+            display: none;
+        }
+
+        .loading-bar.active {
+            display: block;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0078d4, #00bcf2, #0078d4);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            width: 100%;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .loading-text {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .loading-text.active {
+            display: block;
+        }
+
+        #responseSection {
+            display: none;
+        }
+
+        #responseSection.visible {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 220px;
+            padding: 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #222;
+            resize: vertical;
+            transition: border-color 0.15s;
+            margin-bottom: 12px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+
+        .response-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .response-meta-text {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .rag-badge {
+            font-size: 11px;
+            background: #e8f4fd;
+            color: #0078d4;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .rating-label {
+            font-size: 13px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .stars {
+            display: flex;
+            gap: 4px;
+        }
+
+        .star {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #ddd;
+            padding: 0;
+            width: auto;
+            line-height: 1;
+            transition: color 0.1s, transform 0.1s;
+        }
+
+        .star:hover, .star.active {
+            color: #ffc107;
+            transform: scale(1.15);
+        }
+
+        .status-bar {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .status-bar.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status-bar.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .learning-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .learning-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .toggle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: #ccc;
+            border-radius: 20px;
+            transition: background 0.2s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: #0078d4;
+        }
+
+        .toggle input:checked + .toggle-slider::before {
+            transform: translateX(16px);
+        }
+
+        .toggle-state {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0078d4;
+            min-width: 24px;
+        }
+
+        .toggle-state.off {
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div class="header-icon">&#9993;</div>
+            <div style="flex:1;">
+                <h1>Email Response Generator</h1>
+                <p>AI-powered responses for your shared inbox</p>
+            </div>
+            <a href="dashboard.html" title="Dashboard"
+                style="background:none; border:1.5px solid #ddd; border-radius:8px; padding:8px 12px;
+                       cursor:pointer; font-size:13px; font-weight:600; color:#666; text-decoration:none;
+                       display:inline-flex; align-items:center; margin-right:6px;">
+                &#9733; Dashboard
+            </a>
+            <button onclick="openSettings()" title="Settings"
+                style="background:none; border:1.5px solid #ddd; border-radius:8px; padding:8px 12px;
+                       cursor:pointer; font-size:16px; color:#666; width:auto; margin:0;">
+                &#9881;
+            </button>
+        </div>
+
+        <!-- Email Info -->
+        <div class="card">
+            <div class="card-title">Incoming Email</div>
+            <div class="email-grid">
+                <span class="email-label">From:</span>
+                <span class="email-value" id="senderName">-</span>
+                <span class="email-label">Email:</span>
+                <span class="email-value" id="senderEmail">-</span>
+                <span class="email-label">Subject:</span>
+                <span class="email-value subject-value" id="subject">-</span>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div id="statusBar" class="status-bar"></div>
+
+        <!-- Loading -->
+        <div class="loading-text" id="loadingText">Generating response using AI + your email history...</div>
+        <div class="loading-bar" id="loadingBar">
+            <div class="loading-bar-fill"></div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="card" id="generateCard">
+            <textarea class="extra-instructions" id="extraInstructions"
+                placeholder="Have any specific instructions? (optional)"
+                rows="2"
+                oninput="saveExtraInstructions()"></textarea>
+            <div class="generate-row">
+                <button class="btn btn-stop" id="stopBtn" onclick="stopGeneration()" style="display:none;" title="Stop generation (Esc)">
+                    &#9632; Stop
+                </button>
+                <button class="btn btn-primary btn-generate" id="generateBtn" onclick="generateResponse()">
+                    &#10024; Generate Response
+                </button>
+                <select class="btn-style-select" id="styleSelect" onchange="saveStylePreference()">
+                    <option value="standard">Standard</option>
+                    <option value="concise">Concise</option>
+                    <option value="detailed">Detailed</option>
+                    <option value="step-by-step">Step-by-Step</option>
+                </select>
+            </div>
+            <p class="hint">Uses your past sent emails as context for better responses</p>
+        </div>
+
+        <!-- Response Section -->
+        <div id="responseSection">
+            <div class="card">
+                <div class="card-title">Generated Response</div>
+
+                <div class="response-meta">
+                    <span class="response-meta-text" id="responseMeta"></span>
+                    <span class="rag-badge" id="ragBadge"></span>
+                </div>
+
+                <textarea id="response" placeholder="Response will appear here..."></textarea>
+                <p style="font-size:11px; color:#999; margin:4px 0 10px 0;">
+                    Tip: add <strong>[[notes like this]]</strong> anywhere in your edit — saved as style preferences and removed before copying.
+                </p>
+
+                <button class="btn btn-copy" id="copyBtn" onclick="copyResponse()">
+                    <span class="copy-btn-label">&#128203; Copy to Clipboard &#8505;&#65039;</span>
+                </button>
+
+                <p class="hint">Copy the response, then paste it into your Outlook reply</p>
+
+                <div class="learning-row">
+                    <span class="learning-label">Let the AI learn from this response</span>
+                    <div class="toggle-wrap">
+                        <span class="toggle-state" id="learningState">On</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="learningToggle" checked onchange="onLearningToggle()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="rating-row">
+                    <span class="rating-label">Rate this response:</span>
+                    <div class="stars">
+                        <button class="star" onclick="rateResponse(1)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(2)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(3)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(4)">&#9733;</button>
+                        <button class="star" onclick="rateResponse(5)">&#9733;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Settings modal (accessible anytime via gear icon) -->
+    <div id="settingsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:480px; width:90%; margin:auto;">
+            <h2 style="color:#0078d4; margin:0 0 20px 0; font-size:18px;">Settings</h2>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Full Name *</label>
+            <input id="settingsName" type="text"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Role / Title</label>
+            <input id="settingsRole" type="text"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Email Signature</label>
+            <textarea id="settingsSignature"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:13px; min-height:80px; box-sizing:border-box; font-family:inherit;
+                       margin:6px 0 14px 0; resize:vertical;"></textarea>
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
+                <input id="settingsUseSig" type="checkbox" style="width:16px; height:16px;">
+                Always include signature in generated responses
+            </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Shared Mailbox Name</label>
+            <input id="settingsSharedMailbox" type="text" placeholder="e.g. Alberta AI Academy"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
+                <input id="settingsAutoGenerate" type="checkbox" style="width:16px; height:16px;">
+                Auto-generate response when app opens
+            </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">AI Model</label>
+            <select id="settingsAiProvider"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
+                <option value="gemini">Google Gemini (Recommended)</option>
+                <option value="groq">Groq (Fast)</option>
+                <option value="goa">GoA LLM Cluster</option>
+                <option value="ollama">Ollama (Local)</option>
+            </select>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeSettings()"
+                    style="flex:1; padding:12px; background:#6c757d; color:white; border:none;
+                           border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Cancel
+                </button>
+                <button onclick="saveSettings()"
+                    style="flex:1; padding:12px; background:#0078d4; color:white; border:none;
+                           border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import reminder modal -->
+    <div id="importReminderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:420px; width:90%; margin:auto; text-align:center;">
+            <div style="font-size:32px; margin-bottom:12px;">📥</div>
+            <h3 style="margin:0 0 12px 0; font-size:17px; color:#1a1a2e;">Import Sent Emails</h3>
+            <p id="importReminderMsg" style="font-size:14px; color:#555; line-height:1.6; margin:0 0 20px 0;"></p>
+            <button onclick="closeImportReminder()"
+                style="background:#4f46e5; color:white; border:none; border-radius:8px;
+                       padding:10px 24px; font-size:14px; font-weight:600; cursor:pointer;">
+                Got it
+            </button>
+        </div>
+    </div>
+
+    <!-- AI provider error modal -->
+    <div id="providerErrorModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:420px; width:90%; margin:auto; text-align:center;">
+            <div style="font-size:32px; margin-bottom:12px;">⚠️</div>
+            <h3 style="margin:0 0 12px 0; font-size:17px; color:#1a1a2e;">AI Provider Unavailable</h3>
+            <p id="providerErrorMsg" style="font-size:14px; color:#555; line-height:1.6; margin:0 0 20px 0;"></p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="closeProviderError()"
+                    style="background:#6c757d; color:white; border:none; border-radius:8px;
+                           padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Dismiss
+                </button>
+                <button onclick="closeProviderError(); openSettings();"
+                    style="background:#0078d4; color:white; border:none; border-radius:8px;
+                           padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer;">
+                    Open Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- First-run setup modal -->
+    <div id="setupModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px; max-width:480px; width:90%; margin:auto;">
+            <h2 style="color:#0078d4; margin:0 0 6px 0; font-size:18px;">Welcome! Quick Setup</h2>
+            <p style="color:#666; font-size:13px; margin:0 0 20px 0;">
+                This only takes a moment. The AI will use this to sign responses as you.
+            </p>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Full Name *</label>
+            <input id="setupName" type="text" placeholder="e.g. Greatness Ransome-Kuti"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Your Role / Title</label>
+            <input id="setupRole" type="text" placeholder="e.g. ARTS Administrator | MCU | Technology and Innovation"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Email Signature (optional)</label>
+            <p style="font-size:12px; color:#888; margin:4px 0 6px 0;">
+                Paste your Outlook signature here (find it under Insert → Signature in Outlook).
+                Leave blank to use just your name and role.
+            </p>
+            <textarea id="setupSignature" placeholder="e.g.&#10;Greatness Ransome-Kuti&#10;ARTS Administrator | A.I.M. Developer&#10;Ministerial Correspondence Unit (MCU)&#10;Technology and Innovation&#10;Government of Alberta"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:13px; min-height:100px; box-sizing:border-box; font-family:inherit;
+                       margin-bottom:14px; resize:vertical;"></textarea>
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
+                <input id="setupUseSig" type="checkbox" checked style="width:16px; height:16px;">
+                Always include signature in generated responses
+            </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">Shared Mailbox Name (optional)</label>
+            <p style="font-size:12px; color:#888; margin:4px 0 6px 0;">
+                The display name of your shared inbox as it appears in Outlook's left panel.
+                Used to pull sent emails from the right mailbox for AI context.
+            </p>
+            <input id="setupSharedMailbox" type="text" placeholder="e.g. Alberta AI Academy"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 14px 0; box-sizing:border-box;">
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#333; margin-bottom:14px; cursor:pointer;">
+                <input id="setupAutoGenerate" type="checkbox" style="width:16px; height:16px;">
+                Auto-generate response when app opens
+            </label>
+
+            <label style="font-size:13px; font-weight:600; color:#333;">AI Model</label>
+            <select id="setupAiProvider"
+                style="width:100%; padding:10px; border:1.5px solid #ddd; border-radius:6px;
+                       font-size:14px; margin:6px 0 20px 0; box-sizing:border-box;">
+                <option value="gemini">Google Gemini (Recommended)</option>
+                <option value="groq">Groq (Fast)</option>
+                <option value="goa">GoA LLM Cluster</option>
+                <option value="ollama">Ollama (Local)</option>
+            </select>
+
+            <button onclick="saveSetup()"
+                style="width:100%; padding:12px; background:#0078d4; color:white; border:none;
+                       border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                Finish Setup
+            </button>
+        </div>
+    </div>
+
+    <script src="webapp.js"></script>
+</body>
+</html>

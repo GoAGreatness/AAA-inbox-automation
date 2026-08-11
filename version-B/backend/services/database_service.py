@@ -58,9 +58,10 @@ def init_database():
         )
     ''')
 
-    # Sent emails table - stores historical sent replies for RAG context
+    # Legacy sent emails table - superseded by ChromaDB vector store (sent_emails collection)
+    # Kept for potential future use; not actively written to or read from
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS sent_emails (
+        CREATE TABLE IF NOT EXISTS sent_emails_legacy (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sender_email TEXT,
             sender_name TEXT,
@@ -80,6 +81,39 @@ def init_database():
             usage_count INTEGER DEFAULT 0
         )
     ''')
+
+    # User preferences table - stores annotations extracted from edited responses
+    # e.g. [[always apologize for late replies]] → stored as a preference note
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note TEXT UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # User config table - stores user identity for AI context
+    # Single row (id=1) updated in place
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_config (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            full_name TEXT,
+            role TEXT,
+            signature TEXT,
+            use_signature BOOLEAN DEFAULT 1,
+            shared_mailbox_name TEXT,
+            auto_generate BOOLEAN DEFAULT 0,
+            ai_provider TEXT DEFAULT 'ollama',
+            configured_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Migration: add deleted_at to user_preferences if it doesn't exist yet
+    cursor.execute("PRAGMA table_info(user_preferences)")
+    columns = [row['name'] for row in cursor.fetchall()]
+    if 'deleted_at' not in columns:
+        cursor.execute("ALTER TABLE user_preferences ADD COLUMN deleted_at TIMESTAMP DEFAULT NULL")
+        print("Migration: added deleted_at column to user_preferences")
 
     conn.commit()
     conn.close()
@@ -138,7 +172,7 @@ def store_sent_email(sender_email, sender_name, subject, original_body, reply_bo
     cursor = conn.cursor()
 
     cursor.execute(
-        'INSERT INTO sent_emails (sender_email, sender_name, subject, original_body, reply_body) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO sent_emails_legacy (sender_email, sender_name, subject, original_body, reply_body) VALUES (?, ?, ?, ?, ?)',
         (sender_email, sender_name, subject, original_body, reply_body)
     )
 
@@ -146,6 +180,24 @@ def store_sent_email(sender_email, sender_name, subject, original_body, reply_bo
     conn.commit()
     conn.close()
     return email_id
+
+
+def get_email_by_response_id(response_id):
+    """Get the original email + generated response linked to a response id. Used for auto-learning."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        '''SELECT e.*, r.generated_response
+           FROM emails e
+           JOIN responses r ON e.id = r.email_id
+           WHERE r.id = ?''',
+        (response_id,)
+    )
+
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
 
 
 def get_stats():
@@ -164,26 +216,145 @@ def get_stats():
 
     edit_rate = edited / total if total > 0 else 0
 
-    cursor.execute('SELECT COUNT(*) as sent FROM sent_emails')
-    sent_count = cursor.fetchone()['sent']
-
     conn.close()
+
+    from services.vector_service import get_collection_count
+    historical_emails = get_collection_count()
 
     return {
         'total_generated': total,
         'avg_rating': round(avg_rating, 1),
         'edit_rate': round(edit_rate, 2),
-        'historical_emails': sent_count
+        'historical_emails': historical_emails
+    }
+
+
+def get_user_config():
+    """Get saved user config. Returns None if not yet configured."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM user_config WHERE id = 1')
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def save_user_config(full_name, role, signature, use_signature, shared_mailbox_name='', auto_generate=False, ai_provider='ollama'):
+    """Save or update user config (upsert - insert or replace)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO user_config (id, full_name, role, signature, use_signature, shared_mailbox_name, auto_generate, ai_provider, configured_at)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(id) DO UPDATE SET
+            full_name=excluded.full_name,
+            role=excluded.role,
+            signature=excluded.signature,
+            use_signature=excluded.use_signature,
+            shared_mailbox_name=excluded.shared_mailbox_name,
+            auto_generate=excluded.auto_generate,
+            ai_provider=excluded.ai_provider,
+            configured_at=excluded.configured_at
+    ''', (full_name, role, signature, use_signature, shared_mailbox_name, auto_generate, ai_provider))
+    conn.commit()
+    conn.close()
+
+
+def save_user_preferences(notes):
+    """Save a list of annotation notes. Ignores duplicates (UNIQUE constraint)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    for note in notes:
+        note = note.strip()
+        if note:
+            cursor.execute(
+                'INSERT OR IGNORE INTO user_preferences (note) VALUES (?)', (note,)
+            )
+    conn.commit()
+    conn.close()
+
+
+def get_user_preferences():
+    """Get all active (non-deleted) preference notes for AI prompt injection."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT note FROM user_preferences WHERE deleted_at IS NULL ORDER BY created_at ASC')
+    rows = cursor.fetchall()
+    conn.close()
+    return [row['note'] for row in rows]
+
+
+def get_all_preferences():
+    """Get all active (non-deleted) preferences with IDs for the dashboard."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, note, created_at FROM user_preferences WHERE deleted_at IS NULL ORDER BY created_at ASC')
+    rows = cursor.fetchall()
+    conn.close()
+    return [{'id': row['id'], 'note': row['note'], 'created_at': row['created_at']} for row in rows]
+
+
+def delete_preference(preference_id):
+    """Soft delete a preference — marks it as deleted but keeps it for the recycle bin."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_preferences SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', (preference_id,))
+    updated = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return updated > 0
+
+
+def get_deleted_preferences():
+    """Get all soft-deleted preferences for the recycle bin."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, note, deleted_at FROM user_preferences WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC')
+    rows = cursor.fetchall()
+    conn.close()
+    return [{'id': row['id'], 'note': row['note'], 'deleted_at': row['deleted_at']} for row in rows]
+
+
+def restore_preference(preference_id):
+    """Restore a soft-deleted preference back to active."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_preferences SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL', (preference_id,))
+    updated = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return updated > 0
+
+
+def get_learning_stats():
+    """Get time-series data for dashboard charts — rating trend and daily generation counts."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Avg rating per day over last 14 days
+    cursor.execute('''
+        SELECT DATE(created_at) as day, AVG(user_rating) as avg_rating, COUNT(*) as count
+        FROM responses
+        WHERE created_at >= DATE('now', '-14 days')
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    ''')
+    daily_rows = cursor.fetchall()
+
+    conn.close()
+
+    return {
+        'daily': [{'day': r['day'], 'avg_rating': round(r['avg_rating'], 1) if r['avg_rating'] else None, 'generated_count': r['count']} for r in daily_rows]
     }
 
 
 def get_sent_emails(limit=50):
-    """Get historical sent emails for RAG context."""
+    """Get historical sent emails for RAG context. Legacy - data now lives in ChromaDB."""
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        'SELECT * FROM sent_emails ORDER BY imported_at DESC LIMIT ?',
+        'SELECT * FROM sent_emails_legacy ORDER BY imported_at DESC LIMIT ?',
         (limit,)
     )
 
