@@ -249,6 +249,28 @@ async function generateResponse(subject, senderName, senderEmail, body) {
 }
 
 /**
+ * Convert plain text into an HTML string with bare URLs turned into real
+ * <a href> links, so Outlook preserves them as clickable hyperlinks on paste.
+ */
+function buildHtmlWithLinks(text) {
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    html = html.replace(urlRegex, (url) => {
+        // Strip trailing sentence punctuation that isn't part of the URL itself
+        const trailingPunct = url.match(/[.,;:!?)\]}'"]+$/);
+        const trail = trailingPunct ? trailingPunct[0] : '';
+        const cleanUrl = trail ? url.slice(0, -trail.length) : url;
+        return `<a href="${cleanUrl}">${cleanUrl}</a>${trail}`;
+    });
+
+    return html.replace(/\n/g, '<br>');
+}
+
+/**
  * Copy response to clipboard and send feedback
  */
 async function copyResponse() {
@@ -272,11 +294,23 @@ async function copyResponse() {
     document.getElementById('response').value = responseText;
 
     try {
-        await navigator.clipboard.writeText(responseText);
+        // Write both plain text and HTML — Outlook uses the HTML version on
+        // paste, which keeps any bare URLs as real clickable hyperlinks.
+        const htmlContent = buildHtmlWithLinks(responseText);
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                'text/plain': new Blob([responseText], { type: 'text/plain' }),
+                'text/html': new Blob([htmlContent], { type: 'text/html' })
+            })
+        ]);
     } catch {
-        // Fallback
-        document.getElementById('response').select();
-        document.execCommand('copy');
+        try {
+            await navigator.clipboard.writeText(responseText);
+        } catch {
+            // Fallback
+            document.getElementById('response').select();
+            document.execCommand('copy');
+        }
     }
 
     const btn = document.getElementById('copyBtn');
