@@ -57,6 +57,10 @@ def generate_email_response(subject, sender_name, sender_email, body, user_confi
     Generate an AI response using Ollama, GoA LLM cluster, or Google Gemini.
     Provider is determined by the AI_PROVIDER env variable or user config.
     """
+    # Timer starts here so generation_time_ms reflects the TRUE end-to-end cost:
+    # RAG depth decision (LLM call) + similarity search + prompt build + final LLM call.
+    start_time = time.time()
+
     # Determine provider — user config takes priority over env var
     provider = os.getenv('AI_PROVIDER', 'gemini')
     if user_config and user_config.get('ai_provider'):
@@ -122,8 +126,6 @@ Instructions:
 {signature_instruction}{extra_section}
 
 Response:"""
-
-    start_time = time.time()
 
     if provider == 'goa':
         response_text, model_name = _call_goa(prompt)
