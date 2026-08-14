@@ -249,8 +249,10 @@ async function generateResponse(subject, senderName, senderEmail, body) {
 }
 
 /**
- * Convert plain text into an HTML string with bare URLs turned into real
- * <a href> links, so Outlook preserves them as clickable hyperlinks on paste.
+ * Convert plain text into an HTML string with links turned into real <a href>
+ * tags, so Outlook preserves them as clickable hyperlinks on paste.
+ * Handles Markdown-style masked links ([text](url)) from the AI, plus any
+ * bare URLs it emits unwrapped.
  */
 function buildHtmlWithLinks(text) {
     let html = text
@@ -258,6 +260,18 @@ function buildHtmlWithLinks(text) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
+    // Pass 1: Markdown links [text](url) — swap to placeholders first so the
+    // bare-URL pass below can't re-match a URL that's already been linked
+    // (previously this caused adjacent markdown URLs to merge into one broken link).
+    const placeholders = [];
+    const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+    html = html.replace(markdownLinkRegex, (_, label, url) => {
+        const token = ` LINK${placeholders.length} `;
+        placeholders.push(`<a href="${url}">${label}</a>`);
+        return token;
+    });
+
+    // Pass 2: any remaining bare URLs the AI didn't wrap in Markdown
     const urlRegex = /(https?:\/\/[^\s<]+)/g;
     html = html.replace(urlRegex, (url) => {
         // Strip trailing sentence punctuation that isn't part of the URL itself
@@ -267,7 +281,14 @@ function buildHtmlWithLinks(text) {
         return `<a href="${cleanUrl}">${cleanUrl}</a>${trail}`;
     });
 
-    return html.replace(/\n/g, '<br>');
+    html = html.replace(/\n/g, '<br>');
+
+    // Restore the Markdown-derived links now that no further regex passes will run
+    placeholders.forEach((anchorHtml, i) => {
+        html = html.replace(` LINK${i} `, anchorHtml);
+    });
+
+    return html;
 }
 
 /**
