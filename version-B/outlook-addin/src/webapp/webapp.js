@@ -266,7 +266,7 @@ function buildHtmlWithLinks(text) {
     const placeholders = [];
     const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
     html = html.replace(markdownLinkRegex, (_, label, url) => {
-        const token = ` LINK${placeholders.length} `;
+        const token = `LINK${placeholders.length}`;
         placeholders.push(`<a href="${url}">${label}</a>`);
         return token;
     });
@@ -285,7 +285,7 @@ function buildHtmlWithLinks(text) {
 
     // Restore the Markdown-derived links now that no further regex passes will run
     placeholders.forEach((anchorHtml, i) => {
-        html = html.replace(` LINK${i} `, anchorHtml);
+        html = html.replace(`LINK${i}`, anchorHtml);
     });
 
     return html;
