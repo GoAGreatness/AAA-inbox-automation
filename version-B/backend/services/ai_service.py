@@ -57,6 +57,10 @@ def generate_email_response(subject, sender_name, sender_email, body, user_confi
     Generate an AI response using Ollama, GoA LLM cluster, or Google Gemini.
     Provider is determined by the AI_PROVIDER env variable or user config.
     """
+    # Timer starts here so generation_time_ms reflects the TRUE end-to-end cost:
+    # RAG depth decision (LLM call) + similarity search + prompt build + final LLM call.
+    start_time = time.time()
+
     # Determine provider — user config takes priority over env var
     provider = os.getenv('AI_PROVIDER', 'gemini')
     if user_config and user_config.get('ai_provider'):
@@ -79,14 +83,14 @@ def generate_email_response(subject, sender_name, sender_email, body, user_confi
     has_custom_sig = user_config and user_config.get('signature', '').strip()
 
     if use_sig and has_custom_sig:
-        signature_instruction = f"8. End the email with EXACTLY this signature, do not modify it:\n{user_config['signature']}"
+        signature_instruction = f"9. End the email with EXACTLY this signature, do not modify it:\n{user_config['signature']}"
     elif use_sig and user_config and user_config.get('full_name'):
         sig = user_config['full_name']
         if user_config.get('role'):
             sig += f"\n{user_config['role']}"
-        signature_instruction = f"8. Sign off as:\n{sig}"
+        signature_instruction = f"9. Sign off as:\n{sig}"
     else:
-        signature_instruction = "8. Do NOT include any signature or sign-off at the end"
+        signature_instruction = "9. Do NOT include any signature or sign-off at the end"
 
     # Build user preferences section
     if user_preferences:
@@ -119,11 +123,10 @@ Instructions:
 5. {style_instruction}
 6. Do NOT include a subject line, just the response body
 7. If similar past responses are provided above, match their tone and style
+8. When referencing a link, format it in Markdown as [short descriptive phrase](URL) using a concise phrase that describes the destination — never show the raw URL itself as the visible text
 {signature_instruction}{extra_section}
 
 Response:"""
-
-    start_time = time.time()
 
     if provider == 'goa':
         response_text, model_name = _call_goa(prompt)
